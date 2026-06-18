@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | Tenuta Turrita{% endblock %}
+{% block content %}
+<section class="hero">
+  <div>
+    <p class="eyebrow">Tenuta Turrita · Gestione eventi e preventivi</p>
+    <h1>Dashboard eventi</h1>
+    <p class="muted">Riepilogo preventivi, valore stimato e ultimi documenti creati per matrimoni, cerimonie ed eventi privati.</p>
+  </div>
+  <a class="btn primary" href="/quotes/new">+ Nuovo preventivo</a>
+</section>
+
+<div class="cards">
+  <div class="card stat"><span>Preventivi totali</span><strong>{{ stats.total_quotes }}</strong></div>
+  <div class="card stat"><span>Valore complessivo</span><strong>{{ stats.total_value|eur }}</strong></div>
+  <div class="card stat"><span>Accettati</span><strong>{{ stats.by_status.get('accettato', 0) }}</strong></div>
+  <div class="card stat"><span>Inviati</span><strong>{{ stats.by_status.get('inviato', 0) }}</strong></div>
+</div>
+
+<div class="panel">
+  <div class="panel-head">
+    <h2>Ultimi preventivi</h2>
+    <a href="/quotes">Vedi tutti</a>
+  </div>
+  <table>
+    <thead><tr><th>Numero</th><th>Cliente</th><th>Evento</th><th>Data evento</th><th>Stato</th><th>Totale</th></tr></thead>
+    <tbody>
+      {% for q in recent %}
+      <tr>
+        <td><a href="/quotes/{{ q.id }}">{{ q.quote_number }}</a></td>
+        <td>{{ q.first_name }} {{ q.last_name }}</td>
+        <td>{{ q.custom_event_type if q.event_type == 'Generico' and q.custom_event_type else q.event_type }}</td>
+        <td>{{ q.event_date or '-' }}</td>
+        <td><span class="badge {{ q.status }}">{{ q.status }}</span></td>
+        <td>{{ q.total_amount|eur }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="muted">Nessun preventivo presente.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

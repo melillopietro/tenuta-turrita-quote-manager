@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Tenuta Turrita{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand tenuta-brand">
+      <img src="/static/tenuta_turrita_logo.svg" alt="Tenuta Turrita" class="brand-logo">
+      <div>
+        <strong>Tenuta Turrita</strong><br>
+        <span>Villa per matrimoni ed eventi</span>
+      </div>
+    </div>
+    <nav>
+      <a href="/">Dashboard</a>
+      <a href="/quotes">Preventivi</a>
+      <a href="/quotes/new">Nuovo preventivo</a>
+      <a href="/backup">Backup</a>
+      <a href="/settings">Impostazioni</a>
+    </nav>
+  </aside>
+  <main class="main">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

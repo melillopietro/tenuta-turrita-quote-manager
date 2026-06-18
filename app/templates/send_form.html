@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Invia preventivo{% endblock %}
+{% block content %}
+<section class="hero small">
+  <div>
+    <p class="eyebrow">Invio SMTP</p>
+    <h1>Invia preventivo {{ quote.quote_number }}</h1>
+    <p class="muted">Il PDF verrà generato e allegato automaticamente.</p>
+  </div>
+</section>
+
+{% if error %}<div class="alert danger"><strong>Errore invio:</strong> {{ error }}</div>{% endif %}
+
+<form method="post" class="panel narrow">
+  <label>Destinatario<input type="email" name="recipient" value="{{ quote.email or '' }}" required></label>
+  <label>Messaggio<textarea name="message" rows="12">{{ message }}</textarea></label>
+  <div class="actions">
+    <a class="btn" href="/quotes/{{ quote.id }}">Annulla</a>
+    <button class="btn primary" type="submit">Invia email con PDF</button>
+  </div>
+</form>
+{% endblock %}

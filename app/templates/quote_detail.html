@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Preventivo {{ quote.quote_number }}{% endblock %}
+{% block content %}
+<section class="hero small">
+  <div>
+    <p class="eyebrow">Preventivo {{ quote.quote_number }}</p>
+    <h1>{{ quote.first_name }} {{ quote.last_name }}</h1>
+    <p class="muted">{{ quote.custom_event_type if quote.event_type == 'Generico' and quote.custom_event_type else quote.event_type }} · {{ quote.event_date or 'Data non indicata' }}</p>
+  </div>
+  <div class="actions wrap">
+    <a class="btn" href="/quotes/{{ quote.id }}/print" target="_blank">Stampa</a>
+    <a class="btn" href="/quotes/{{ quote.id }}/pdf">PDF</a>
+    <a class="btn" href="/quotes/{{ quote.id }}/send">Invia email</a>
+    <a class="btn primary" href="/quotes/{{ quote.id }}/contract">Contratto</a>
+  </div>
+</section>
+
+<div class="cards">
+  <div class="card stat"><span>Stato</span><strong><span class="badge {{ quote.status }}">{{ quote.status }}</span></strong></div>
+  <div class="card stat"><span>Totale</span><strong>{{ quote.total_amount|eur }}</strong></div>
+  <div class="card stat"><span>Invitati</span><strong>{{ quote.guests_adults + quote.guests_children }}</strong></div>
+  <div class="card stat"><span>Compilato da</span><strong>{{ quote.compiled_by_name or '-' }}</strong></div>
+</div>
+
+<div class="grid-layout">
+  <div class="panel">
+    <div class="panel-head"><h2>Dati preventivo</h2></div>
+    <table class="kv">
+      <tr><th>Cliente</th><td>{{ quote.first_name }} {{ quote.last_name }}</td></tr>
+      <tr><th>Telefono</th><td>{{ quote.phone or '-' }}</td></tr>
+      <tr><th>Email</th><td>{{ quote.email or '-' }}</td></tr>
+      <tr><th>Evento</th><td>{{ quote.custom_event_type if quote.event_type == 'Generico' and quote.custom_event_type else quote.event_type }}</td></tr>
+      <tr><th>Data</th><td>{{ quote.event_date or '-' }}</td></tr>
+      <tr><th>Orario</th><td>{{ quote.event_start_time or '-' }} - {{ quote.event_end_time or '-' }}</td></tr>
+      <tr><th>Location</th><td>{{ quote.location or '-' }}</td></tr>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Cambia stato</h2>
+    <form method="post" action="/quotes/{{ quote.id }}/status" class="inline-form">
+      <select name="status">
+        {% for s in statuses %}<option value="{{ s }}" {% if s == quote.status %}selected{% endif %}>{{ s }}</option>{% endfor %}
+      </select>
+      <button class="btn primary">Aggiorna</button>
+    </form>
+    {% if contract %}
+      <h2>Contratto</h2>
+      <p><strong>Caparra:</strong> {{ contract.deposit_amount|eur }}</p>
+      <p><strong>IBAN:</strong> {{ contract.iban or '-' }}</p>
+      <p><strong>Scadenza preventivo:</strong> {{ contract.quote_expiry_date or '-' }}</p>
+    {% else %}
+      <p class="muted">Formula contrattuale non ancora inserita.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Menù</h2>
+  <table>
+    <thead><tr><th>Portata</th><th>Piatto</th><th>Descrizione</th><th>Allergeni</th><th>Note</th></tr></thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ item.custom_course_name if item.course_type == 'Custom' and item.custom_course_name else item.course_type }}</td>
+        <td><strong>{{ item.dish_name }}</strong></td>
+        <td>{{ item.description or '-' }}</td>
+        <td>{{ item.allergens or '-' }}</td>
+        <td>{{ item.notes or '-' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="muted">Nessun piatto inserito.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="grid-layout">
+  <div class="panel">
+    <h2>Riepilogo economico</h2>
+    <table class="kv">
+      <tr><th>Adulti</th><td>{{ quote.guests_adults }} × {{ quote.price_per_adult|eur }}</td></tr>
+      <tr><th>Bambini</th><td>{{ quote.guests_children }} × {{ quote.price_per_child|eur }}</td></tr>
+      <tr><th>Extra</th><td>{{ quote.extra_amount|eur }}</td></tr>
+      <tr><th>Sconto</th><td>{{ quote.discount_amount|eur }}</td></tr>
+      <tr><th>IVA</th><td>{{ quote.vat_rate }}%</td></tr>
+      <tr><th>Totale</th><td><strong>{{ quote.total_amount|eur }}</strong></td></tr>
+    </table>
+  </div>
+  <div class="panel">
+    <h2>Note</h2>
+    <p>{{ quote.notes or 'Nessuna nota.' }}</p>
+  </div>
+</div>
+
+<div class="grid-layout">
+  <div class="panel">
+    <h2>Email inviate</h2>
+    <table>
+      <thead><tr><th>Data</th><th>Destinatario</th><th>Stato</th></tr></thead>
+      <tbody>
+        {% for e in email_logs %}<tr><td>{{ e.sent_at }}</td><td>{{ e.recipient_email }}</td><td>{{ e.status }}</td></tr>{% else %}<tr><td colspan="3" class="muted">Nessuna email inviata.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="panel">
+    <h2>PDF generati</h2>
+    <table>
+      <thead><tr><th>Data</th><th>File</th></tr></thead>
+      <tbody>
+        {% for p in pdfs %}<tr><td>{{ p.generated_at }}</td><td>{{ p.file_path.split('/')[-1] }}</td></tr>{% else %}<tr><td colspan="2" class="muted">Nessun PDF generato.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

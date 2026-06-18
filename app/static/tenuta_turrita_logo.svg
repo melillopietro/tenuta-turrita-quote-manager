@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#87977A"/>
+  <ellipse cx="256" cy="256" rx="105" ry="160" fill="none" stroke="#DDBA74" stroke-width="10"/>
+  <ellipse cx="256" cy="256" rx="92" ry="145" fill="none" stroke="#DDBA74" stroke-width="4"/>
+  <circle cx="256" cy="144" r="8" fill="#DDBA74"/>
+  <circle cx="256" cy="368" r="8" fill="#DDBA74"/>
+  <text x="256" y="300" text-anchor="middle"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="150"
+        fill="#DDBA74">TT</text>
+</svg>

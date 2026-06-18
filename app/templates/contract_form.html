@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Contratto {{ quote.quote_number }}{% endblock %}
+{% block content %}
+<section class="hero small">
+  <div>
+    <p class="eyebrow">Formula contrattuale</p>
+    <h1>Contratto preventivo {{ quote.quote_number }}</h1>
+    <p class="muted">Inserisci caparra confirmatoria, IBAN, scadenze e penali.</p>
+  </div>
+</section>
+
+<form method="post" class="form-grid">
+  <div class="panel span-2">
+    <h2>Dati pagamento e scadenze</h2>
+    <div class="grid-3">
+      <label>IBAN<input name="iban" value="{{ contract.iban if contract else settings.company_iban }}"></label>
+      <label>Intestatario conto<input name="account_holder" value="{{ contract.account_holder if contract else settings.company_account_holder }}"></label>
+      <label>Caparra confirmatoria €<input type="number" step="0.01" name="deposit_amount" value="{{ contract.deposit_amount if contract else '' }}"></label>
+      <label>Scadenza preventivo<input type="date" name="quote_expiry_date" value="{{ contract.quote_expiry_date if contract else '' }}"></label>
+      <label>Scadenza caparra<input type="date" name="deposit_due_date" value="{{ contract.deposit_due_date if contract else '' }}"></label>
+      <label>Data saldo<input type="date" name="balance_due_date" value="{{ contract.balance_due_date if contract else '' }}"></label>
+      <label>Conferma numero invitati<input type="date" name="guest_confirmation_date" value="{{ contract.guest_confirmation_date if contract else '' }}"></label>
+      <label>Limite annullamento<input type="date" name="cancellation_deadline" value="{{ contract.cancellation_deadline if contract else '' }}"></label>
+      <label>Data accettazione<input type="date" name="accepted_at" value="{{ contract.accepted_at if contract else '' }}"></label>
+    </div>
+  </div>
+
+  <div class="panel span-2">
+    <h2>Condizioni</h2>
+    <label>Politica annullamento<textarea name="cancellation_policy" rows="3">{{ contract.cancellation_policy if contract else '' }}</textarea></label>
+    <label>Clausola penale<textarea name="penalty_clause" rows="3">{{ contract.penalty_clause if contract else '' }}</textarea></label>
+    <label>Testo contrattuale<textarea name="contract_text" rows="18">{{ template_text }}</textarea></label>
+    <label class="check"><input type="checkbox" name="mark_accepted"> Segna il preventivo come accettato</label>
+  </div>
+
+  <div class="span-2 actions sticky-actions">
+    <a class="btn" href="/quotes/{{ quote.id }}">Annulla</a>
+    <button class="btn primary" type="submit">Salva formula contrattuale</button>
+  </div>
+</form>
+{% endblock %}

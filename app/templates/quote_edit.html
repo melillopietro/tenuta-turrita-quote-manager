@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+{% block title %}Modifica {{ quote.quote_number }} | Tenuta Turrita{% endblock %}
+{% block content %}
+<section class="hero small">
+  <div>
+    <p class="eyebrow">Modifica preventivo</p>
+    <h1>{{ quote.quote_number }}</h1>
+    <p class="muted">Aggiorna cliente, evento, menù e riepilogo economico.</p>
+  </div>
+</section>
+
+<form method="post" class="form-grid" id="quoteForm">
+  <div class="panel form-section span-2">
+    <h2>Dati cliente</h2>
+    <div class="grid-3">
+      <label>Ruolo
+        <select name="primary_customer_role">
+          {% set primary_role = quote.primary_customer_role or '' %}
+          <option value="" {% if primary_role == '' %}selected{% endif %}>Non indicato</option>
+          <option value="Sposo" {% if primary_role == 'Sposo' %}selected{% endif %}>Sposo</option>
+          <option value="Sposa" {% if primary_role == 'Sposa' %}selected{% endif %}>Sposa</option>
+          <option value="Cliente principale" {% if primary_role == 'Cliente principale' %}selected{% endif %}>Cliente principale</option>
+          <option value="Referente evento" {% if primary_role == 'Referente evento' %}selected{% endif %}>Referente evento</option>
+        </select>
+      </label>
+      <label>Nome<input required name="customer_first_name" value="{{ quote.first_name }}"></label>
+      <label>Cognome<input required name="customer_last_name" value="{{ quote.last_name }}"></label>
+      <label>Telefono<input name="customer_phone" value="{{ quote.phone or '' }}"></label>
+      <label>Email<input type="email" name="customer_email" value="{{ quote.email or '' }}"></label>
+      <label>Codice fiscale / P.IVA<input name="customer_fiscal_code" value="{{ quote.fiscal_code or '' }}"></label>
+      <label>Indirizzo<input name="customer_address" value="{{ quote.address or '' }}"></label>
+    </div>
+    <label>Note cliente<textarea name="customer_notes" rows="2">{{ quote.customer_notes or '' }}</textarea></label>
+
+    <hr class="soft-separator">
+    <h3>Secondo cliente / sposo / sposa</h3>
+    <p class="muted">Utile per matrimoni o eventi intestati a due persone.</p>
+    <div class="grid-3">
+      <label>Ruolo
+        <select name="secondary_customer_role">
+          {% set sec_role = quote.secondary_customer_role or '' %}
+          <option value="" {% if sec_role == '' %}selected{% endif %}>Non indicato</option>
+          <option value="Sposo" {% if sec_role == 'Sposo' %}selected{% endif %}>Sposo</option>
+          <option value="Sposa" {% if sec_role == 'Sposa' %}selected{% endif %}>Sposa</option>
+          <option value="Secondo cliente" {% if sec_role == 'Secondo cliente' %}selected{% endif %}>Secondo cliente</option>
+          <option value="Referente evento" {% if sec_role == 'Referente evento' %}selected{% endif %}>Referente evento</option>
+        </select>
+      </label>
+      <label>Nome<input name="secondary_customer_first_name" value="{{ quote.secondary_customer_first_name or '' }}"></label>
+      <label>Cognome<input name="secondary_customer_last_name" value="{{ quote.secondary_customer_last_name or '' }}"></label>
+      <label>Telefono<input name="secondary_customer_phone" value="{{ quote.secondary_customer_phone or '' }}"></label>
+      <label>Email<input type="email" name="secondary_customer_email" value="{{ quote.secondary_customer_email or '' }}"></label>
+    </div>
+  </div>
+
+  <div class="panel form-section span-2">
+    <h2>Dati evento</h2>
+    <div class="event-picker">
+      {% for event in event_types %}
+      <label class="event-option">
+        <input type="radio" name="event_type" value="{{ event }}" {% if quote.event_type == event %}checked{% endif %} onchange="toggleCustomEvent()">
+        <span>{{ event }}</span>
+      </label>
+      {% endfor %}
+    </div>
+    <div class="grid-3">
+      <label class="custom-event {% if quote.event_type != 'Generico' %}hidden{% endif %}">Evento personalizzato<input name="custom_event_type" value="{{ quote.custom_event_type or '' }}" placeholder="es. Cena aziendale"></label>
+      <label>Data evento<input type="date" name="event_date" value="{{ quote.event_date or '' }}"></label>
+      <label>Ora inizio<input type="time" name="event_start_time" value="{{ quote.event_start_time or '' }}"></label>
+      <label>Ora fine<input type="time" name="event_end_time" value="{{ quote.event_end_time or '' }}"></label>
+      <label>Adulti<input type="number" min="0" name="guests_adults" value="{{ quote.guests_adults }}" oninput="calcTotal()"></label>
+      <label>Bambini<input type="number" min="0" name="guests_children" value="{{ quote.guests_children }}" oninput="calcTotal()"></label>
+      <label>Location<input name="location" value="{{ quote.location or '' }}"></label>
+      <label>Compilato da
+        <select name="compiled_by_staff_id">
+          <option value="">Non indicato</option>
+          {% for s in staff %}
+          <option value="{{ s.id }}" {% if quote.compiled_by_staff_id == s.id %}selected{% endif %}>{{ s.name }}{% if s.role %} - {{ s.role }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <div class="panel form-section span-2">
+    <div class="panel-head">
+      <div>
+        <h2>Menù adulti</h2>
+        <p class="muted">Menù principale per gli ospiti adulti.</p>
+      </div>
+      <button type="button" class="btn" onclick="addMenuRow()">+ Aggiungi piatto adulti</button>
+    </div>
+
+    <div id="menuRows" class="menu-rows">
+      {% for item in items %}
+      <div class="menu-row">
+        <input type="hidden" name="menu_group" value="{{ item.menu_group or 'adult' }}">
+        <div class="grid-4">
+          <label>Portata
+            <select name="course_type" onchange="toggleCustomCourse(this)">
+              {% for c in course_types %}
+              <option value="{{ c }}" {% if item.course_type == c %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="custom-course {% if item.course_type != 'Custom' %}hidden{% endif %}">Nome portata custom<input name="custom_course_name" value="{{ item.custom_course_name or '' }}" placeholder="es. Open bar"></label>
+          <label>Nome piatto<input name="dish_name" value="{{ item.dish_name }}" placeholder="es. Risotto agli agrumi"></label>
+          <label>Extra €<input type="number" step="0.01" name="extra_price" value="{{ item.extra_price or 0 }}"></label>
+        </div>
+        <div class="grid-3">
+          <label>Descrizione<input name="description" value="{{ item.description or '' }}" placeholder="Breve descrizione"></label>
+          <label>Allergeni<input name="allergens" value="{{ item.allergens or '' }}" placeholder="es. glutine, latte"></label>
+          <label>Note<input name="item_notes" value="{{ item.notes or '' }}"></label>
+        </div>
+        <button type="button" class="btn danger" onclick="this.closest('.menu-row').remove()">Rimuovi</button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel form-section span-2">
+    <div class="panel-head">
+      <div>
+        <h2>Menù bambini</h2>
+        <p class="muted">Menù dedicato ai bambini, tipicamente antipasto, primo e secondo.</p>
+      </div>
+      <button type="button" class="btn" onclick="addChildMenuRow()">+ Aggiungi piatto bambini</button>
+    </div>
+    <div id="childMenuRows" class="menu-rows"></div>
+  </div>
+
+  <div class="panel form-section">
+    <h2>Riepilogo economico</h2>
+    <div class="grid-2">
+      <label>Prezzo adulto<input type="number" step="0.01" name="price_per_adult" value="{{ quote.price_per_adult }}" oninput="calcTotal()"></label>
+      <label>Prezzo bambino<input type="number" step="0.01" name="price_per_child" value="{{ quote.price_per_child }}" oninput="calcTotal()"></label>
+      <label>Extra<input type="number" step="0.01" name="extra_amount" value="{{ quote.extra_amount }}" oninput="calcTotal()"></label>
+      <label>Sconto<input type="number" step="0.01" name="discount_amount" value="{{ quote.discount_amount }}" oninput="calcTotal()"></label>
+      <label>IVA %<input type="number" step="0.01" name="vat_rate" value="{{ quote.vat_rate }}" oninput="calcTotal()"></label>
+      <div class="total-box"><span>Totale stimato</span><strong id="totalPreview">€ 0,00</strong></div>
+    </div>
+  </div>
+
+  <div class="panel form-section">
+    <h2>Note preventivo</h2>
+    <textarea name="notes" rows="11" placeholder="Inserisci note organizzative, richieste del cliente, vincoli alimentari, ecc.">{{ quote.notes or '' }}</textarea>
+  </div>
+
+  <div class="span-2 actions sticky-actions">
+    <a class="btn" href="/quotes/{{ quote.id }}">Annulla</a>
+    <button class="btn primary" type="submit">Salva modifiche</button>
+  </div>
+</form>
+
+<template id="menuRowTemplate">
+  <div class="menu-row">
+    <input type="hidden" name="menu_group" value="adult">
+    <div class="grid-4">
+      <label>Portata
+        <select name="course_type" onchange="toggleCustomCourse(this)">
+          {% for c in course_types %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="custom-course hidden">Nome portata custom<input name="custom_course_name" placeholder="es. Open bar"></label>
+      <label>Nome piatto<input name="dish_name" placeholder="es. Risotto agli agrumi"></label>
+      <label>Extra €<input type="number" step="0.01" name="extra_price" value="0"></label>
+    </div>
+    <div class="grid-3">
+      <label>Descrizione<input name="description" placeholder="Breve descrizione"></label>
+      <label>Allergeni<input name="allergens" placeholder="es. glutine, latte"></label>
+      <label>Note<input name="item_notes"></label>
+    </div>
+    <button type="button" class="btn danger" onclick="this.closest('.menu-row').remove()">Rimuovi</button>
+  </div>
+</template>
+
+
+<template id="childMenuRowTemplate">
+  <div class="menu-row child-menu-row">
+    <input type="hidden" name="menu_group" value="children">
+    <div class="grid-4">
+      <label>Portata
+        <select name="course_type" onchange="toggleCustomCourse(this)">
+          {% for c in course_types %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="custom-course hidden">Nome portata custom<input name="custom_course_name" placeholder="es. Merenda bambini"></label>
+      <label>Nome piatto<input name="dish_name" placeholder="es. Pasta al pomodoro"></label>
+      <label>Extra €<input type="number" step="0.01" name="extra_price" value="0"></label>
+    </div>
+    <div class="grid-3">
+      <label>Descrizione<input name="description" placeholder="Breve descrizione"></label>
+      <label>Allergeni<input name="allergens" placeholder="es. glutine, latte"></label>
+      <label>Note<input name="item_notes"></label>
+    </div>
+    <button type="button" class="btn danger" onclick="this.closest('.menu-row').remove()">Rimuovi</button>
+  </div>
+</template>
+
+<script>
+function addMenuRow(course) {
+  const tpl = document.getElementById('menuRowTemplate');
+  const node = tpl.content.cloneNode(true);
+  if (course) node.querySelector('select[name="course_type"]').value = course;
+  document.getElementById('menuRows').appendChild(node);
+}
+
+function addChildMenuRow(course) {
+  const tpl = document.getElementById('childMenuRowTemplate');
+  const node = tpl.content.cloneNode(true);
+  if (course) node.querySelector('select[name="course_type"]').value = course;
+  document.getElementById('childMenuRows').appendChild(node);
+}
+
+function toggleCustomEvent() {
+  const selected = document.querySelector('input[name="event_type"]:checked')?.value;
+  document.querySelector('.custom-event').classList.toggle('hidden', selected !== 'Generico');
+}
+
+function toggleCustomCourse(select) {
+  const row = select.closest('.menu-row');
+  row.querySelector('.custom-course').classList.toggle('hidden', select.value !== 'Custom');
+}
+
+function val(name) {
+  return parseFloat(document.querySelector(`[name="${name}"]`)?.value || '0') || 0;
+}
+
+function calcTotal() {
+  const adults = val('guests_adults');
+  const children = val('guests_children');
+  const pa = val('price_per_adult');
+  const pc = val('price_per_child');
+  const extra = val('extra_amount');
+  const discount = val('discount_amount');
+  const vat = val('vat_rate');
+
+  let subtotal = Math.max((adults * pa) + (children * pc) + extra - discount, 0);
+  let total = subtotal + (subtotal * vat / 100);
+
+  document.getElementById('totalPreview').innerText = total.toLocaleString('it-IT', {style:'currency', currency:'EUR'});
+}
+
+if (document.querySelectorAll('#menuRows .menu-row').length === 0) {
+  addMenuRow();
+}
+
+toggleCustomEvent();
+calcTotal();
+</script>
+{% endblock %}

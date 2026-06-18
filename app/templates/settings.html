@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Impostazioni{% endblock %}
+{% block content %}
+<section class="hero small">
+  <div>
+    <p class="eyebrow">Configurazione</p>
+    <h1>Impostazioni</h1>
+    <p class="muted">Dati ristorante, SMTP, Google Drive e personale.</p>
+  </div>
+</section>
+
+<form method="post" class="form-grid">
+  <div class="panel form-section span-2">
+    <h2>Dati ristorante</h2>
+    <div class="grid-2">
+      <label>Nome ristorante<input name="company_name" value="{{ settings.company_name }}"></label>
+      <label>Email ristorante<input name="company_email" value="{{ settings.company_email }}"></label>
+      <label>Telefono<input name="company_phone" value="{{ settings.company_phone }}"></label>
+      <label>Indirizzo<input name="company_address" value="{{ settings.company_address }}"></label>
+      <label>IBAN<input name="company_iban" value="{{ settings.company_iban }}"></label>
+      <label>Intestatario conto<input name="company_account_holder" value="{{ settings.company_account_holder }}"></label>
+    </div>
+  </div>
+
+  <div class="panel form-section">
+    <h2>SMTP</h2>
+    <label>Host<input name="smtp_host" value="{{ settings.smtp_host }}" placeholder="smtp.gmail.com"></label>
+    <label>Porta<input name="smtp_port" value="{{ settings.smtp_port }}" placeholder="587"></label>
+    <label class="check"><input type="checkbox" name="smtp_secure" {% if settings.smtp_secure == 'true' %}checked{% endif %}> Usa SMTP SSL diretto</label>
+    <label>Username<input name="smtp_username" value="{{ settings.smtp_username }}"></label>
+    <label>Password<input type="password" name="smtp_password" value="{{ settings.smtp_password }}"></label>
+    <label>Nome mittente<input name="smtp_sender_name" value="{{ settings.smtp_sender_name }}"></label>
+    <label>Email mittente<input name="smtp_sender_email" value="{{ settings.smtp_sender_email }}"></label>
+  </div>
+
+  <div class="panel form-section">
+    <h2>Google Drive</h2>
+    <p class="muted">Per abilitare il backup cloud inserisci il file OAuth in <code>app/secrets/google_credentials.json</code>.</p>
+    <label class="check"><input type="checkbox" name="drive_backup_enabled" {% if settings.drive_backup_enabled == 'true' %}checked{% endif %}> Abilita backup Google Drive</label>
+  </div>
+
+  <div class="span-2 actions sticky-actions">
+    <button class="btn primary" type="submit">Salva impostazioni</button>
+  </div>
+</form>
+
+<div class="panel">
+  <div class="panel-head"><h2>Personale / compilatori menù</h2></div>
+  <form method="post" action="/settings/staff" class="inline-form wrap">
+    <input name="staff_name" placeholder="Nome" required>
+    <input name="staff_role" placeholder="Ruolo">
+    <input name="staff_email" placeholder="Email">
+    <button class="btn primary">Aggiungi</button>
+  </form>
+  <table>
+    <thead><tr><th>Nome</th><th>Ruolo</th><th>Email</th><th>Attivo</th></tr></thead>
+    <tbody>
+      {% for s in staff %}<tr><td>{{ s.name }}</td><td>{{ s.role or '-' }}</td><td>{{ s.email or '-' }}</td><td>{{ 'Sì' if s.active else 'No' }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

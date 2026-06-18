@@ -1,0 +1,39 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+data/restaurant_quotes.db
+data/pdfs/*.pdf
+data/backups/*.zip
+app/secrets/google_credentials.json
+data/google_token.json
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local database and generated files
+data/*.db
+data/*.db.*
+data/pdfs/*
+!data/pdfs/.gitkeep
+data/backups/*
+!data/backups/.gitkeep
+
+# Secrets
+.env
+app/secrets/*
+!app/secrets/.gitkeep
+
+# Local patches/backups
+*.bak
+*.bak_*
+patch_*.py
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/

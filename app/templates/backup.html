@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Backup{% endblock %}
+{% block content %}
+<section class="hero small">
+  <div>
+    <p class="eyebrow">Protezione dati</p>
+    <h1>Backup</h1>
+    <p class="muted">Crea un backup ZIP con database e PDF. Se configurato, viene caricato anche su Google Drive.</p>
+  </div>
+  <form method="post"><button class="btn primary">Crea backup</button></form>
+</section>
+
+<div class="panel">
+  <h2>Stato backup cloud</h2>
+  <p>Google Drive: <strong>{{ 'abilitato' if settings.drive_backup_enabled == 'true' else 'non abilitato' }}</strong></p>
+</div>
+
+<div class="panel">
+  <h2>Storico backup</h2>
+  <table>
+    <thead><tr><th>Data</th><th>Tipo</th><th>Stato</th><th>Drive ID</th><th>Errore</th><th></th></tr></thead>
+    <tbody>
+      {% for j in jobs %}
+      <tr>
+        <td>{{ j.created_at }}</td>
+        <td>{{ j.backup_type }}</td>
+        <td>{{ j.status }}</td>
+        <td>{{ j.google_drive_file_id or '-' }}</td>
+        <td>{{ j.error_message or '-' }}</td>
+        <td><a class="btn" href="/backup/download/{{ j.id }}">Scarica</a></td>
+      </tr>
+      {% else %}<tr><td colspan="6" class="muted">Nessun backup creato.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

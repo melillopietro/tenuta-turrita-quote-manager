@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Preventivi | Tenuta Turrita{% endblock %}
+{% block content %}
+<section class="hero small">
+  <div>
+    <p class="eyebrow">Tenuta Turrita · Archivio preventivi</p>
+    <h1>Preventivi</h1>
+    <p class="muted">Consulta, modifica o elimina i preventivi creati.</p>
+  </div>
+  <a class="btn primary" href="/quotes/new">+ Nuovo preventivo</a>
+</section>
+
+<div class="panel">
+  <div class="panel-head">
+    <h2>Elenco preventivi</h2>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Numero</th>
+        <th>Cliente</th>
+        <th>Evento</th>
+        <th>Data evento</th>
+        <th>Stato</th>
+        <th>Totale</th>
+        <th>Azioni</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for q in quotes %}
+      <tr>
+        <td><strong>{{ q.quote_number }}</strong></td>
+        <td>{{ q.first_name }} {{ q.last_name }}</td>
+        <td>{{ q.custom_event_type if q.event_type == 'Generico' and q.custom_event_type else q.event_type }}</td>
+        <td>{{ q.event_date or '-' }}</td>
+        <td><span class="badge {{ q.status }}">{{ q.status }}</span></td>
+        <td>{{ q.total_amount|eur }}</td>
+        <td>
+          <div class="table-actions">
+            <a class="btn small" href="/quotes/{{ q.id }}">Apri</a>
+            <a class="btn small" href="/quotes/{{ q.id }}/edit">Modifica</a>
+            <form method="post" action="/quotes/{{ q.id }}/duplicate">
+              <button class="btn small" type="submit">Duplica</button>
+            </form>
+            <form method="post" action="/quotes/{{ q.id }}/delete" onsubmit="return confirm('Vuoi eliminare definitivamente il preventivo {{ q.quote_number }}?');">
+              <button class="btn small danger" type="submit">Elimina</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="muted">Nessun preventivo presente.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
