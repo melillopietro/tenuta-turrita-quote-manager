@@ -1,22 +1,51 @@
 {% extends "base.html" %}
-{% block title %}Invia preventivo{% endblock %}
+{% block title %}Trasmissione Preventivo {{ quote.quote_number }} | Tenuta Turrita{% endblock %}
 {% block content %}
 <section class="hero small">
   <div>
-    <p class="eyebrow">Invio SMTP</p>
-    <h1>Invia preventivo {{ quote.quote_number }}</h1>
-    <p class="muted">Il PDF verrà generato e allegato automaticamente.</p>
+    <p class="eyebrow">Tenuta Turrita · Trasmissione Documentale</p>
+    <h1>Invia Preventivo {{ quote.quote_number }}</h1>
+    <p class="muted">Il documento PDF in alta definizione verrà compilato e allegato automaticamente al messaggio email.</p>
   </div>
 </section>
 
-{% if error %}<div class="alert danger"><strong>Errore invio:</strong> {{ error }}</div>{% endif %}
+{% if error %}
+<div class="alert danger">
+  <strong>Impossibile completare l'invio:</strong> {{ error }}
+</div>
+{% endif %}
 
-<form method="post" class="panel narrow">
-  <label>Destinatario<input type="email" name="recipient" value="{{ quote.email or '' }}" required></label>
-  <label>Messaggio<textarea name="message" rows="12">{{ message }}</textarea></label>
-  <div class="actions">
-    <a class="btn" href="/quotes/{{ quote.id }}">Annulla</a>
-    <button class="btn primary" type="submit">Invia email con PDF</button>
+<div class="grid-layout">
+  <form method="post" class="panel">
+    <div class="panel-head"><h2>Composizione Messaggio Email</h2></div>
+
+    <label>Indirizzo Destinatario *
+      <input type="email" name="recipient" value="{{ quote.email or '' }}" placeholder="destinatario@email.it" required>
+    </label>
+
+    <label>Testo di Accompagnamento
+      <textarea name="message" rows="11">{{ message }}</textarea>
+    </label>
+
+    <div class="actions" style="margin-top: 18px;">
+      <a class="btn" href="/quotes/{{ quote.id }}">Annulla</a>
+      <button class="btn primary" type="submit">Invia Email con Allegato PDF</button>
+    </div>
+  </form>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Riepilogo Documento Allegato</h2></div>
+    <table class="kv">
+      <tr><th>Numero Documento</th><td><strong>{{ quote.quote_number }}</strong></td></tr>
+      <tr><th>Intestatario</th><td>{{ quote.first_name }} {{ quote.last_name }}{% if quote.secondary_customer_first_name %} & {{ quote.secondary_customer_first_name }} {{ quote.secondary_customer_last_name }}{% endif %}</td></tr>
+      <tr><th>Data Evento</th><td>{{ quote.event_date or '-' }}</td></tr>
+      <tr><th>Tipologia Evento</th><td>{{ quote.custom_event_type if quote.event_type == 'Generico' and quote.custom_event_type else quote.event_type }}</td></tr>
+      <tr><th>Importo Preventivo</th><td><strong>{{ quote.total_amount|eur }}</strong></td></tr>
+      <tr><th>Allegato Generato</th><td><code>Preventivo_{{ quote.quote_number }}_{{ quote.event_type }}_{{ quote.last_name }}.pdf</code></td></tr>
+    </table>
+    <div style="margin-top: 18px;">
+      <a class="btn small" href="/quotes/{{ quote.id }}/pdf" target="_blank">Anteprima Documento PDF</a>
+    </div>
   </div>
-</form>
+</div>
 {% endblock %}

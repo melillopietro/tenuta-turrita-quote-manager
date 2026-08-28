@@ -1,56 +1,157 @@
 {% extends "base.html" %}
-{% block title %}Preventivi | Tenuta Turrita{% endblock %}
+{% block title %}Archivio Preventivi | Tenuta Turrita{% endblock %}
 {% block content %}
 <section class="hero small">
   <div>
-    <p class="eyebrow">Tenuta Turrita · Archivio preventivi</p>
-    <h1>Preventivi</h1>
-    <p class="muted">Consulta, modifica o elimina i preventivi creati.</p>
+    <p class="eyebrow">Tenuta Turrita · Gestione Preventivi</p>
+    <h1>Archivio Preventivi</h1>
+    <p class="muted">Ricerca, filtra, visualizza o modifica le proposte gastronomiche ed economiche per matrimoni ed eventi.</p>
   </div>
-  <a class="btn primary" href="/quotes/new">+ Nuovo preventivo</a>
+  <a class="btn primary" href="/quotes/new">Nuovo Preventivo</a>
 </section>
+
+<!-- Barra filtri e ricerca avanzata -->
+<div class="panel filter-panel">
+  <form method="get" action="/quotes" class="filter-form">
+    <div class="search-input-wrapper">
+      <input type="text" name="q" value="{{ current_q }}" placeholder="Cerca per nominativo cliente, numero preventivo, recapito telefonico o location..." class="search-input">
+      {% if current_q %}
+      <a href="/quotes" class="clear-search" title="Cancella ricerca">Annulla</a>
+      {% endif %}
+    </div>
+
+    <div class="filter-row">
+      <div class="filter-item">
+        <label>Tipologia Evento</label>
+        <select name="event_type" onchange="this.form.submit()">
+          <option value="all" {% if current_event_type == 'all' %}selected{% endif %}>Tutti gli eventi</option>
+          {% for et in event_types %}
+          <option value="{{ et }}" {% if current_event_type == et %}selected{% endif %}>{{ et }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-item">
+        <label>Anno</label>
+        <select name="year" onchange="this.form.submit()">
+          <option value="all" {% if current_year == 'all' %}selected{% endif %}>Tutti gli anni</option>
+          {% for yr in available_years %}
+          <option value="{{ yr }}" {% if current_year == (yr|string) %}selected{% endif %}>{{ yr }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-item">
+        <label>Ordinamento</label>
+        <select name="sort_by" onchange="this.form.submit()">
+          <option value="created_desc" {% if current_sort == 'created_desc' %}selected{% endif %}>Data creazione (più recenti)</option>
+          <option value="created_asc" {% if current_sort == 'created_asc' %}selected{% endif %}>Data creazione (meno recenti)</option>
+          <option value="event_date_asc" {% if current_sort == 'event_date_asc' %}selected{% endif %}>Data evento (cronologico)</option>
+          <option value="event_date_desc" {% if current_sort == 'event_date_desc' %}selected{% endif %}>Data evento (dal più futuro)</option>
+          <option value="total_desc" {% if current_sort == 'total_desc' %}selected{% endif %}>Importo (decrescente)</option>
+          <option value="total_asc" {% if current_sort == 'total_asc' %}selected{% endif %}>Importo (crescente)</option>
+          <option value="quote_number_desc" {% if current_sort == 'quote_number_desc' %}selected{% endif %}>Numero preventivo</option>
+        </select>
+      </div>
+
+      <input type="hidden" name="status" value="{{ current_status }}">
+
+      <div class="filter-actions">
+        <button type="submit" class="btn primary small">Applica Filtri</button>
+        {% if current_q or current_status != 'all' or current_event_type != 'all' or current_year != 'all' %}
+        <a href="/quotes" class="btn small">Ripristina</a>
+        {% endif %}
+      </div>
+    </div>
+  </form>
+
+  <!-- Schede / Tab di stato rapido -->
+  <div class="status-tabs">
+    <a href="/quotes?status=all{% if current_q %}&q={{ current_q }}{% endif %}{% if current_event_type != 'all' %}&event_type={{ current_event_type }}{% endif %}{% if current_year != 'all' %}&year={{ current_year }}{% endif %}&sort_by={{ current_sort }}"
+       class="status-tab {% if current_status == 'all' %}active{% endif %}">
+      Tutti <span class="tab-count">{{ stats.total_quotes }}</span>
+    </a>
+    {% for s in statuses %}
+    <a href="/quotes?status={{ s }}{% if current_q %}&q={{ current_q }}{% endif %}{% if current_event_type != 'all' %}&event_type={{ current_event_type }}{% endif %}{% if current_year != 'all' %}&year={{ current_year }}{% endif %}&sort_by={{ current_sort }}"
+       class="status-tab tab-{{ s }} {% if current_status == s %}active{% endif %}">
+      {{ s|capitalize }} <span class="tab-count">{{ stats.by_status.get(s, 0) }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</div>
 
 <div class="panel">
   <div class="panel-head">
-    <h2>Elenco preventivi</h2>
+    <h2>Elenco Preventivi ({{ quotes|length }})</h2>
   </div>
 
   <table>
     <thead>
       <tr>
         <th>Numero</th>
-        <th>Cliente</th>
+        <th>Cliente / Referente</th>
         <th>Evento</th>
-        <th>Data evento</th>
+        <th>Data Evento</th>
+        <th>Ospiti</th>
         <th>Stato</th>
         <th>Totale</th>
-        <th>Azioni</th>
+        <th style="text-align: right;">Azioni</th>
       </tr>
     </thead>
     <tbody>
       {% for q in quotes %}
       <tr>
-        <td><strong>{{ q.quote_number }}</strong></td>
-        <td>{{ q.first_name }} {{ q.last_name }}</td>
-        <td>{{ q.custom_event_type if q.event_type == 'Generico' and q.custom_event_type else q.event_type }}</td>
-        <td>{{ q.event_date or '-' }}</td>
-        <td><span class="badge {{ q.status }}">{{ q.status }}</span></td>
-        <td>{{ q.total_amount|eur }}</td>
         <td>
-          <div class="table-actions">
-            <a class="btn small" href="/quotes/{{ q.id }}">Apri</a>
-            <a class="btn small" href="/quotes/{{ q.id }}/edit">Modifica</a>
+          <a href="/quotes/{{ q.id }}" class="quote-link">
+            <strong>{{ q.quote_number }}</strong>
+          </a>
+        </td>
+        <td>
+          <strong>{{ q.first_name }} {{ q.last_name }}</strong>
+          {% if q.primary_customer_role %}
+          <small class="text-muted">({{ q.primary_customer_role }})</small>
+          {% endif %}
+          {% if q.secondary_customer_first_name %}
+          <br><small class="text-muted">e {{ q.secondary_customer_first_name }} {{ q.secondary_customer_last_name }}</small>
+          {% endif %}
+          {% if q.phone %}<br><small class="text-muted">Tel. {{ q.phone }}</small>{% endif %}
+        </td>
+        <td>
+          <span class="event-tag">{{ q.custom_event_type if q.event_type == 'Generico' and q.custom_event_type else q.event_type }}</span>
+          {% if q.location %}<br><small class="text-muted">{{ q.location }}</small>{% endif %}
+        </td>
+        <td>
+          <strong>{{ q.event_date or '-' }}</strong>
+          {% if q.event_start_time %}<br><small class="text-muted">{{ q.event_start_time }} - {{ q.event_end_time }}</small>{% endif %}
+        </td>
+        <td>{{ q.guests_adults + q.guests_children }} <small class="text-muted">({{ q.guests_adults }} ad. + {{ q.guests_children }} bam.)</small></td>
+        <td><span class="badge {{ q.status }}">{{ q.status }}</span></td>
+        <td><strong>{{ q.total_amount|eur }}</strong></td>
+        <td>
+          <div class="table-actions" style="justify-content: flex-end;">
+            <a class="btn small" href="/quotes/{{ q.id }}" title="Visualizza scheda">Apri</a>
+            <a class="btn small" href="/quotes/{{ q.id }}/pdf" title="Scarica documento PDF" target="_blank">PDF</a>
+            <a class="btn small" href="/quotes/{{ q.id }}/edit" title="Modifica preventivo">Modifica</a>
             <form method="post" action="/quotes/{{ q.id }}/duplicate">
-              <button class="btn small" type="submit">Duplica</button>
+              <button class="btn small" type="submit" title="Duplica preventivo">Duplica</button>
             </form>
-            <form method="post" action="/quotes/{{ q.id }}/delete" onsubmit="return confirm('Vuoi eliminare definitivamente il preventivo {{ q.quote_number }}?');">
-              <button class="btn small danger" type="submit">Elimina</button>
+            <form method="post" action="/quotes/{{ q.id }}/delete" onsubmit="return confirm('Confermi l\'eliminazione definitiva del preventivo {{ q.quote_number }} di {{ q.first_name }} {{ q.last_name }}?');">
+              <button class="btn small danger" type="submit" title="Elimina preventivo">Elimina</button>
             </form>
           </div>
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="7" class="muted">Nessun preventivo presente.</td></tr>
+      <tr>
+        <td colspan="8" class="empty-row">
+          <p>Nessun preventivo corrisponde ai parametri di ricerca impostati.</p>
+          {% if current_q or current_status != 'all' or current_event_type != 'all' or current_year != 'all' %}
+          <a href="/quotes" class="btn small primary">Azzera filtri di ricerca</a>
+          {% else %}
+          <a href="/quotes/new" class="btn small primary">Crea il primo preventivo</a>
+          {% endif %}
+        </td>
+      </tr>
       {% endfor %}
     </tbody>
   </table>

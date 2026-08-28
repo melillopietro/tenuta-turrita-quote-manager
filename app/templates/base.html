@@ -9,21 +9,62 @@
 <body>
   <aside class="sidebar">
     <div class="brand tenuta-brand">
-      <img src="/static/tenuta_turrita_logo.svg" alt="Tenuta Turrita" class="brand-logo">
+      <img src="/static/tenuta_turrita_logo.png" alt="Tenuta Turrita" class="brand-logo">
       <div>
         <strong>Tenuta Turrita</strong><br>
         <span>Villa per matrimoni ed eventi</span>
       </div>
     </div>
     <nav>
-      <a href="/">Dashboard</a>
-      <a href="/quotes">Preventivi</a>
-      <a href="/quotes/new">Nuovo preventivo</a>
-      <a href="/backup">Backup</a>
-      <a href="/settings">Impostazioni</a>
+      <a href="/" class="{% if request.url.path == '/' %}active{% endif %}">Dashboard</a>
+      <a href="/quotes" class="{% if request.url.path.startswith('/quotes') and request.url.path != '/quotes/new' %}active{% endif %}">Preventivi</a>
+      <a href="/quotes/new" class="{% if request.url.path == '/quotes/new' %}active{% endif %}">Nuovo Preventivo</a>
+      <a href="/backup" class="{% if request.url.path == '/backup' %}active{% endif %}">Backup & Archivio</a>
+      <a href="/settings" class="{% if request.url.path == '/settings' %}active{% endif %}">Impostazioni</a>
     </nav>
   </aside>
   <main class="main">
+    {% set active_msg = msg or request.query_params.get('msg') %}
+    {% if active_msg %}
+    <div class="toast-notification" id="toastNotification">
+      <div class="toast-content">
+        {% if active_msg == 'created' %}
+          <span>Preventivo creato con successo.</span>
+        {% elif active_msg == 'updated' %}
+          <span>Preventivo aggiornato con successo.</span>
+        {% elif active_msg == 'deleted' %}
+          <span>Preventivo eliminato dall'archivio.</span>
+        {% elif active_msg == 'duplicated' %}
+          <span>Preventivo duplicato. Generato nuovo numero progressivo.</span>
+        {% elif active_msg == 'status_updated' %}
+          <span>Stato del preventivo aggiornato.</span>
+        {% elif active_msg == 'contract_saved' %}
+          <span>Condizioni contrattuali registrate con successo.</span>
+        {% elif active_msg == 'email_sent' %}
+          <span>Preventivo e documento PDF inviati via email al cliente.</span>
+        {% elif active_msg == 'settings_saved' %}
+          <span>Impostazioni aziendali salvate correttamente.</span>
+        {% elif active_msg == 'staff_added' %}
+          <span>Collaboratore inserito nell'organico.</span>
+        {% elif active_msg == 'backup_created' %}
+          <span>Archivio di sicurezza generato con successo.</span>
+        {% else %}
+          <span>Operazione completata con successo.</span>
+        {% endif %}
+      </div>
+      <button type="button" class="toast-close" onclick="document.getElementById('toastNotification').remove()">&times;</button>
+    </div>
+    <script>
+      setTimeout(() => {
+        const t = document.getElementById('toastNotification');
+        if (t) {
+          t.style.opacity = '0';
+          setTimeout(() => t.remove(), 400);
+        }
+      }, 4500);
+    </script>
+    {% endif %}
+
     {% block content %}{% endblock %}
   </main>
 </body>

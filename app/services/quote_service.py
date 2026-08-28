@@ -18,6 +18,64 @@ COURSE_TYPES = [
 ]
 STATUSES = ["bozza", "inviato", "in_attesa", "accettato", "rifiutato", "scaduto", "annullato"]
 
+MENU_PRESETS: dict[str, dict[str, Any]] = {
+    "matrimonio_grand_gala": {
+        "name": "Matrimonio Grand Galà",
+        "description": "Menù nuziale d'eccellenza con gran buffet, due primi raffinati e secondo di mare",
+        "suggested_price_adult": 140.0,
+        "suggested_price_child": 45.0,
+        "adult_items": [
+            {"course_type": "Buffet di benvenuto", "custom_course_name": "", "dish_name": "Gran Buffet di Benvenuto & Cocktail Bellini", "description": "Finger food gourmet, ostriche, crudi di mare, frittini caldi e calice di benvenuto", "allergens": "Crostacei, Molluschi, Pesce, Glutine", "item_notes": "Allestimento nel parco", "extra_price": 0.0},
+            {"course_type": "Antipasto", "custom_course_name": "", "dish_name": "Tris di Mare con Carpaccio di Spigola e Burrata", "description": "Carpaccio di spigola agli agrumi, gambero rosso di Mazara e bocconcino di burrata pugliese", "allergens": "Pesce, Crostacei, Latte", "item_notes": "Servito a tavola", "extra_price": 0.0},
+            {"course_type": "Primo", "custom_course_name": "", "dish_name": "Risotto Carnaroli con Astice e Limone Igp", "description": "Mantecato al burro di Normandia con polpa d'astice e zeste di limone di Sorrento", "allergens": "Crostacei, Latte", "item_notes": "", "extra_price": 0.0},
+            {"course_type": "Primo", "custom_course_name": "", "dish_name": "Paccheri di Gragnano con Pescato del Giorno", "description": "Con datterino giallo, olive taggiasche e basilico fresco", "allergens": "Glutine, Pesce", "item_notes": "", "extra_price": 0.0},
+            {"course_type": "Secondo", "custom_course_name": "", "dish_name": "Filetto di Orata in Crosta di Mandorle ed Erbe", "description": "Accompagnato da caponatina leggera di verdure e patate novelle al rosmarino", "allergens": "Pesce, Frutta a guscio", "item_notes": "", "extra_price": 0.0},
+            {"course_type": "Frutta", "custom_course_name": "", "dish_name": "Composta di Frutti di Bosco ed Esotici", "description": "Con sorbetto al mango e mentuccia fresca", "allergens": "", "item_notes": "", "extra_price": 0.0},
+            {"course_type": "Dolci", "custom_course_name": "", "dish_name": "Torta Nuziale Monumentale & Gran Buffet di Dolci", "description": "Torta chantilly con frutti di bosco e carrello dei dolci tradizionali", "allergens": "Glutine, Latte, Uova", "item_notes": "Taglio torta a bordo piscina", "extra_price": 0.0},
+        ],
+        "child_items": [
+            {"course_type": "Antipasto", "custom_course_name": "", "dish_name": "Prosciutto Crudo di Parma e Bocconcini di Bufala", "description": "Salumi dolci e mozzarelline fresche campane", "allergens": "Latte", "item_notes": "", "extra_price": 0.0},
+            {"course_type": "Primo", "custom_course_name": "", "dish_name": "Gnocchetti di Patate al Pomodoro Fresco e Basilico", "description": "Pasta fresca preparata a mano con pomodoro dolce", "allergens": "Glutine, Latte", "item_notes": "", "extra_price": 0.0},
+            {"course_type": "Secondo", "custom_course_name": "", "dish_name": "Cotoletta Dorata di Vitello con Patatine Fritte", "description": "Cotoletta croccante con patatine fritte dorate", "allergens": "Glutine, Uova", "item_notes": "", "extra_price": 0.0},
+        ]
+    },
+    "cerimonia_tradizione": {
+        "name": "Cerimonia Tradizione & Terra",
+        "description": "Menù ricco per comunioni, cresime e battesimi con eccellenze del territorio",
+        "suggested_price_adult": 110.0,
+        "suggested_price_child": 40.0,
+        "adult_items": [
+            {"course_type": "Aperitivo", "custom_course_name": "", "dish_name": "Aperitivo Tenuta Turrita con Calice di Benvenuto", "description": "Stuzzichini caldi, rustici e fritti della tradizione", "allergens": "Glutine, Latte", "item_notes": "", "extra_price": 0.0},
+            {"course_type": "Antipasto", "custom_course_name": "", "dish_name": "Antipasto Nobile della Tenuta", "description": "Salumi artigianali, formaggi campani con miele e confetture, verdure dell'orto grigliate", "allergens": "Latte", "item_notes": "", "extra_price": 0.0},
+            {"course_type": "Primo", "custom_course_name": "", "dish_name": "Calamarata con Ragù Bianco di Chianina e Porcini", "description": "Pasta trafilata al bronzo con porcini freschi e vellutata di provola affumicata", "allergens": "Glutine, Latte", "item_notes": "", "extra_price": 0.0},
+            {"course_type": "Secondo", "custom_course_name": "", "dish_name": "Tagliata di Manzo al Rosmarino con Patate al Forno", "description": "Cottura a bassa temperatura con scaglie di grana e rucola novella", "allergens": "Latte", "item_notes": "", "extra_price": 0.0},
+            {"course_type": "Dolci", "custom_course_name": "", "dish_name": "Torta Cerimonia e Buffet di Frutta", "description": "Torta celebrativa personalizzata con frutta fresca di stagione", "allergens": "Glutine, Latte, Uova", "item_notes": "", "extra_price": 0.0},
+        ],
+        "child_items": [
+            {"course_type": "Antipasto", "custom_course_name": "", "dish_name": "Trancetto di Pizza Margherita e Mozzarellina", "description": "Pizzetta sfornata al momento", "allergens": "Glutine, Latte", "item_notes": "", "extra_price": 0.0},
+            {"course_type": "Primo", "custom_course_name": "", "dish_name": "Penne al Pomodoro Dolce e Parmigiano", "description": "Classico intramontabile amato dai bambini", "allergens": "Glutine, Latte", "item_notes": "", "extra_price": 0.0},
+            {"course_type": "Secondo", "custom_course_name": "", "dish_name": "Bocconcini di Pollo Croccanti con Patatine", "description": "Bites di pollo dorati e fragranti", "allergens": "Glutine", "item_notes": "", "extra_price": 0.0},
+        ]
+    },
+    "compleanno_festa": {
+        "name": "Festa & Anniversario",
+        "description": "Menù dinamico ed elegante per compleanni, lauree ed eventi serali",
+        "suggested_price_adult": 85.0,
+        "suggested_price_child": 35.0,
+        "adult_items": [
+            {"course_type": "Buffet di benvenuto", "custom_course_name": "", "dish_name": "Gran Buffet Aperitivo Rinforzato a Passaggio", "description": "Taglieri, canapè, quiche lorraine, fritturine e cocktail bar", "allergens": "Glutine, Latte, Uova", "item_notes": "", "extra_price": 0.0},
+            {"course_type": "Primo", "custom_course_name": "", "dish_name": "Risotto ai Funghi Porcini e Tartufo Estivo", "description": "Mantecato con parmigiano 24 mesi e olio al tartufo", "allergens": "Latte", "item_notes": "", "extra_price": 0.0},
+            {"course_type": "Secondo", "custom_course_name": "", "dish_name": "Filetto di Maialino Nero Casertano con Patate Glassate", "description": "Al profumo di mela annurca e rosmarino", "allergens": "", "item_notes": "", "extra_price": 0.0},
+            {"course_type": "Dolci", "custom_course_name": "", "dish_name": "Torta Scenografica Personalizzata & Spumante", "description": "Torta a scelta con brindisi augurale", "allergens": "Glutine, Latte, Uova", "item_notes": "", "extra_price": 0.0},
+        ],
+        "child_items": [
+            {"course_type": "Antipasto", "custom_course_name": "", "dish_name": "Pizzette e Panzerottini Caldi", "description": "Mini rustici della casa", "allergens": "Glutine, Latte", "item_notes": "", "extra_price": 0.0},
+            {"course_type": "Primo", "custom_course_name": "", "dish_name": "Lasagnetta Tradizionale al Forno", "description": "Con ragù dolce e besciamella", "allergens": "Glutine, Latte, Uova", "item_notes": "", "extra_price": 0.0},
+            {"course_type": "Secondo", "custom_course_name": "", "dish_name": "Mini Hamburger Artigianali con Patatine Fritte", "description": "Serviti con salse delicate", "allergens": "Glutine, Sesamo", "item_notes": "", "extra_price": 0.0},
+        ]
+    }
+}
+
 
 def money(value: Any) -> float:
     if value in (None, ""):
@@ -37,6 +95,33 @@ def integer(value: Any) -> int:
         return 0
 
 
+def calculate_quote_breakdown(
+    guests_adults: int,
+    guests_children: int,
+    price_per_adult: float,
+    price_per_child: float,
+    extra_amount: float,
+    discount_amount: float,
+    vat_rate: float,
+) -> dict[str, float]:
+    adults_subtotal = round(max(guests_adults, 0) * max(price_per_adult, 0.0), 2)
+    children_subtotal = round(max(guests_children, 0) * max(price_per_child, 0.0), 2)
+    raw_subtotal = adults_subtotal + children_subtotal + max(extra_amount, 0.0) - max(discount_amount, 0.0)
+    net_taxable = round(max(raw_subtotal, 0.0), 2)
+    vat_amount = round(net_taxable * max(vat_rate, 0.0) / 100.0, 2)
+    total_amount = round(net_taxable + vat_amount, 2)
+    return {
+        "adults_subtotal": adults_subtotal,
+        "children_subtotal": children_subtotal,
+        "extra_amount": round(extra_amount, 2),
+        "discount_amount": round(discount_amount, 2),
+        "net_taxable": net_taxable,
+        "vat_rate": vat_rate,
+        "vat_amount": vat_amount,
+        "total_amount": total_amount,
+    }
+
+
 def calculate_total(
     guests_adults: int,
     guests_children: int,
@@ -46,10 +131,16 @@ def calculate_total(
     discount_amount: float,
     vat_rate: float,
 ) -> float:
-    subtotal = (guests_adults * price_per_adult) + (guests_children * price_per_child) + extra_amount - discount_amount
-    subtotal = max(subtotal, 0)
-    total = subtotal + (subtotal * vat_rate / 100)
-    return round(total, 2)
+    breakdown = calculate_quote_breakdown(
+        guests_adults,
+        guests_children,
+        price_per_adult,
+        price_per_child,
+        extra_amount,
+        discount_amount,
+        vat_rate,
+    )
+    return breakdown["total_amount"]
 
 
 def next_quote_number() -> tuple[str, int, int]:
@@ -210,15 +301,62 @@ def create_quote(form: dict[str, Any]) -> int:
     return int(quote_id)
 
 
-def list_quotes() -> list[Any]:
-    return query_all(
-        """
-        SELECT q.*, c.first_name, c.last_name, c.email, c.phone
+def list_quotes(
+    q: str | None = None,
+    status: str | None = None,
+    event_type: str | None = None,
+    year: int | str | None = None,
+    sort_by: str | None = "created_desc",
+) -> list[Any]:
+    sql = """
+        SELECT q.*, c.first_name, c.last_name, c.email, c.phone, c.address
         FROM quotes q
         JOIN customers c ON c.id = q.customer_id
-        ORDER BY q.created_at DESC
-        """
-    )
+        WHERE 1=1
+    """
+    params: list[Any] = []
+
+    if q and q.strip():
+        term = f"%{q.strip()}%"
+        sql += """ AND (
+            q.quote_number LIKE ?
+            OR c.first_name LIKE ?
+            OR c.last_name LIKE ?
+            OR q.secondary_customer_first_name LIKE ?
+            OR q.secondary_customer_last_name LIKE ?
+            OR c.phone LIKE ?
+            OR c.email LIKE ?
+            OR q.location LIKE ?
+            OR q.custom_event_type LIKE ?
+        )"""
+        params.extend([term] * 9)
+
+    if status and status.strip() and status != "all":
+        sql += " AND q.status = ?"
+        params.append(status.strip())
+
+    if event_type and event_type.strip() and event_type != "all":
+        sql += " AND q.event_type = ?"
+        params.append(event_type.strip())
+
+    if year and str(year).strip() and str(year) != "all":
+        sql += " AND q.year = ?"
+        params.append(int(year))
+
+    order_clauses = {
+        "created_desc": "q.created_at DESC",
+        "created_asc": "q.created_at ASC",
+        "event_date_asc": "q.event_date ASC, q.created_at DESC",
+        "event_date_desc": "q.event_date DESC, q.created_at DESC",
+        "total_desc": "q.total_amount DESC",
+        "total_asc": "q.total_amount ASC",
+        "quote_number_desc": "q.year DESC, q.progressive_number DESC",
+        "quote_number_asc": "q.year ASC, q.progressive_number ASC",
+    }
+    order = order_clauses.get(sort_by or "created_desc", "q.created_at DESC")
+    sql += f" ORDER BY {order}"
+
+    return query_all(sql, params)
 
 
 def get_quote(quote_id: int) -> Any:

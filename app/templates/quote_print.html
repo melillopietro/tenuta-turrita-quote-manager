@@ -2,80 +2,91 @@
 <html lang="it">
 <head>
   <meta charset="utf-8">
-  <title>Preventivo {{ quote.quote_number }}</title>
+  <title>Preventivo {{ quote.quote_number }} - Tenuta Turrita</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body class="print-page">
   <div class="print-toolbar no-print">
-    <button onclick="window.print()" class="btn primary">Stampa</button>
-    <a href="/quotes/{{ quote.id }}" class="btn">Torna al preventivo</a>
+    <button onclick="window.print()" class="btn primary">Stampa Documento</button>
+    <a href="/quotes/{{ quote.id }}" class="btn">Torna alla Scheda Preventivo</a>
   </div>
 
   <article class="sheet">
     <header class="print-header">
       <div class="print-brand-row">
-        <img src="/static/tenuta_turrita_logo.svg" alt="Tenuta Turrita" class="print-logo">
+        <img src="/static/tenuta_turrita_logo.png" alt="Tenuta Turrita" class="print-logo">
         <div>
           <h1>{{ settings.company_name or 'Tenuta Turrita' }}</h1>
-          <p>{{ settings.company_payoff or 'Villa per matrimoni ed eventi' }}</p>
-          <p>{{ settings.company_address or '' }}{% if settings.company_phone %} · {{ settings.company_phone }}{% endif %}{% if settings.company_email %} · {{ settings.company_email }}{% endif %}</p>
+          <p class="payoff">{{ settings.company_payoff or 'Villa per matrimoni ed eventi' }}</p>
+          <p class="company-meta">{{ settings.company_address or 'Via Roma, Dragoni (CE)' }}{% if settings.company_phone %} · Tel. {{ settings.company_phone }}{% endif %}{% if settings.company_email %} · {{ settings.company_email }}{% endif %}</p>
         </div>
       </div>
-      <div class="quote-code">{{ quote.quote_number }}</div>
+      <div class="quote-code">Rif. {{ quote.quote_number }}</div>
     </header>
 
-    <h2>Preventivo evento</h2>
+    <h2>Dati Generali Evento</h2>
     <table class="kv print-kv">
       <tr>
-        <th>Cliente</th>
+        <th>Cliente / Referente</th>
         <td>
-          {% if quote.primary_customer_role %}{{ quote.primary_customer_role }}: {% endif %}{{ quote.first_name }} {{ quote.last_name }}
+          {% if quote.primary_customer_role %}{{ quote.primary_customer_role }}: {% endif %}<strong>{{ quote.first_name }} {{ quote.last_name }}</strong>
           {% if quote.secondary_customer_first_name or quote.secondary_customer_last_name %}
-            e {{ quote.secondary_customer_first_name }} {{ quote.secondary_customer_last_name }}
+            <br>& {% if quote.secondary_customer_role %}{{ quote.secondary_customer_role }}: {% endif %}{{ quote.secondary_customer_first_name }} {{ quote.secondary_customer_last_name }}
           {% endif %}
         </td>
-        <th>Email</th><td>{{ quote.email or '-' }}</td>
+        <th>Indirizzo Email</th><td>{{ quote.email or '-' }}</td>
       </tr>
-      <tr><th>Telefono</th><td>{{ quote.phone or '-' }}</td><th>Evento</th><td>{{ quote.custom_event_type if quote.event_type == 'Generico' and quote.custom_event_type else quote.event_type }}</td></tr>
-      <tr><th>Data</th><td>{{ quote.event_date or '-' }}</td><th>Orario</th><td>{{ quote.event_start_time or '-' }} - {{ quote.event_end_time or '-' }}</td></tr>
-      <tr><th>Invitati</th><td>{{ quote.guests_adults + quote.guests_children }}</td><th>Location</th><td>{{ quote.location or '-' }}</td></tr>
+      <tr><th>Recapito Telefonico</th><td>{{ quote.phone or '-' }}</td><th>Tipologia Evento</th><td><strong>{{ quote.custom_event_type if quote.event_type == 'Generico' and quote.custom_event_type else quote.event_type }}</strong></td></tr>
+      <tr><th>Data Evento</th><td><strong>{{ quote.event_date or '-' }}</strong></td><th>Orario Concordato</th><td>{{ quote.event_start_time or '-' }} - {{ quote.event_end_time or '-' }}</td></tr>
+      <tr><th>Numero Ospiti</th><td>{{ quote.guests_adults + quote.guests_children }} ({{ quote.guests_adults }} adulti + {{ quote.guests_children }} bambini)</td><th>Spazio / Location</th><td>{{ quote.location or '-' }}</td></tr>
     </table>
 
-    <h2>Menù proposto</h2>
+    <h2>Proposta Gastronomica & Menù</h2>
     <table>
-      <thead><tr><th>Menù</th><th>Portata</th><th>Piatto</th><th>Descrizione / Note</th></tr></thead>
+      <thead><tr><th>Menù</th><th>Portata</th><th>Piatto Selezionato</th><th>Descrizione, Ingredienti & Note</th></tr></thead>
       <tbody>
       {% for item in items %}
         <tr>
-          <td>{{ 'Bambini' if item.menu_group == 'children' else 'Adulti' }}</td>
-          <td>{{ item.custom_course_name if item.course_type == 'Custom' and item.custom_course_name else item.course_type }}</td>
-          <td><strong>{{ item.dish_name }}</strong></td>
-          <td>{{ item.description or '-' }}{% if item.allergens %}<br><small>Allergeni: {{ item.allergens }}</small>{% endif %}{% if item.notes %}<br><small>{{ item.notes }}</small>{% endif %}</td>
+          <td><span class="badge {{ 'in_attesa' if item.menu_group == 'children' else 'accettato' }}">{{ 'Bambini' if item.menu_group == 'children' else 'Adulti' }}</span></td>
+          <td><strong>{{ item.custom_course_name if item.course_type == 'Custom' and item.custom_course_name else item.course_type }}</strong></td>
+          <td>
+            <strong>{{ item.dish_name }}</strong>
+            {% if item.extra_price and item.extra_price > 0 %}
+            <br><small>+ {{ item.extra_price|eur }} a persona</small>
+            {% endif %}
+          </td>
+          <td>
+            {{ item.description or '-' }}
+            {% if item.allergens %}<br><small><strong>Allergeni:</strong> {{ item.allergens }}</small>{% endif %}
+            {% if item.notes %}<br><small><em>Note: {{ item.notes }}</em></small>{% endif %}
+          </td>
         </tr>
+      {% else %}
+        <tr><td colspan="4" class="muted">Nessun piatto inserito.</td></tr>
       {% endfor %}
       </tbody>
     </table>
 
-    <h2>Riepilogo economico</h2>
+    <h2>Prospetto Economico</h2>
     <table class="kv print-kv">
-      <tr><th>Adulti</th><td>{{ quote.guests_adults }} × {{ quote.price_per_adult|eur }}</td><th>Bambini</th><td>{{ quote.guests_children }} × {{ quote.price_per_child|eur }}</td></tr>
-      <tr><th>Extra</th><td>{{ quote.extra_amount|eur }}</td><th>Sconto</th><td>{{ quote.discount_amount|eur }}</td></tr>
-      <tr><th>IVA</th><td>{{ quote.vat_rate }}%</td><th>Totale</th><td><strong>{{ quote.total_amount|eur }}</strong></td></tr>
+      <tr><th>Quota Ospiti Adulti</th><td>{{ quote.guests_adults }} × {{ quote.price_per_adult|eur }} = {{ breakdown.adults_subtotal|eur }}</td><th>Quota Bambini</th><td>{{ quote.guests_children }} × {{ quote.price_per_child|eur }} = {{ breakdown.children_subtotal|eur }}</td></tr>
+      <tr><th>Servizi Extra & Allestimenti</th><td>{{ breakdown.extra_amount|eur }}</td><th>Sconto Riservato</th><td>- {{ breakdown.discount_amount|eur }}</td></tr>
+      <tr><th>Totale Imponibile Netto</th><td>{{ breakdown.net_taxable|eur }}</td><th>Imposta IVA ({{ quote.vat_rate }}%)</th><td>{{ breakdown.vat_amount|eur }}</td></tr>
+      <tr style="background:#F7F3EB; font-weight:bold;"><th>TOTALE COMPLESSIVO PREVENTIVO</th><td colspan="3" style="font-size:15px; color:#2F352C;">{{ breakdown.total_amount|eur }}</td></tr>
     </table>
 
-    {% if quote.notes %}<h2>Note</h2><p>{{ quote.notes }}</p>{% endif %}
+    {% if quote.notes %}<h2>Note & Accordi Operativi</h2><p style="white-space: pre-wrap; font-size: 13px; line-height: 1.5;">{{ quote.notes }}</p>{% endif %}
 
     {% set contract_text = contract.contract_text if contract and contract.contract_text else settings.default_contract_terms %}
     {% if contract_text %}
-    <h2>Condizioni contrattuali</h2>
+    <h2>Condizioni Generali di Conferma</h2>
     <pre class="contract-pre">{{ contract_text }}</pre>
     {% endif %}
 
     <div class="signature-row">
-      <div>Firma cliente<br><br>________________________</div>
-      <div>Firma struttura<br><br>________________________</div>
+      <div>Data e Luogo: ________________________<br><br>Firma per accettazione il Cliente:<br><br>________________________________________</div>
+      <div><br><br>Per la Direzione Tenuta Turrita:<br><br>________________________________________</div>
     </div>
   </article>
-  <script>setTimeout(() => window.print(), 300);</script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import shutil
+import sqlite3
 import zipfile
 from datetime import datetime
 from pathlib import Path
@@ -14,10 +14,12 @@ def create_local_backup() -> Path:
     stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     zip_path = BACKUP_DIR / f"backup_ristorante_{stamp}.zip"
 
-    # Force DB file copy first, then zip the copy and PDFs.
+    # Utilizza l'API nativa SQLite Online Backup per garantire integrità totale
     temp_db = BACKUP_DIR / f"restaurant_quotes_{stamp}.db"
     if DB_PATH.exists():
-        shutil.copy2(DB_PATH, temp_db)
+        with sqlite3.connect(DB_PATH) as src_conn:
+            with sqlite3.connect(temp_db) as dst_conn:
+                src_conn.backup(dst_conn)
 
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
         if temp_db.exists():

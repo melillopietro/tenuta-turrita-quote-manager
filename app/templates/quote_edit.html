@@ -3,15 +3,34 @@
 {% block content %}
 <section class="hero small">
   <div>
-    <p class="eyebrow">Modifica preventivo</p>
-    <h1>{{ quote.quote_number }}</h1>
-    <p class="muted">Aggiorna cliente, evento, menù e riepilogo economico.</p>
+    <p class="eyebrow">Modifica Preventivo {{ quote.quote_number }}</p>
+    <h1>{{ quote.first_name }} {{ quote.last_name }}</h1>
+    <p class="muted">Aggiorna le informazioni dell'evento, personalizza la proposta gastronomica e ricalcola i corrispettivi.</p>
   </div>
 </section>
 
+<!-- Box selezione rapida preset -->
+<div class="panel preset-banner">
+  <div class="preset-header">
+    <div>
+      <strong>Modelli Gastronomici Predefiniti</strong>
+      <p class="muted" style="margin: 4px 0 0 0; font-size: 13px;">Carica in un clic una proposta gastronomica completa per adulti e bambini studiata dagli chef di Tenuta Turrita.</p>
+    </div>
+    <div class="preset-controls">
+      <select id="presetSelect">
+        <option value="">-- Seleziona un modello --</option>
+        {% for key, p in menu_presets.items() %}
+        <option value="{{ key }}">{{ p.name }} (Consigliato: € {{ p.suggested_price_adult }}/adulto, € {{ p.suggested_price_child }}/bambino)</option>
+        {% endfor %}
+      </select>
+      <button type="button" class="btn primary small" onclick="applySelectedPreset()">Carica Modello</button>
+    </div>
+  </div>
+</div>
+
 <form method="post" class="form-grid" id="quoteForm">
   <div class="panel form-section span-2">
-    <h2>Dati cliente</h2>
+    <h2>Dati Cliente Principale</h2>
     <div class="grid-3">
       <label>Ruolo
         <select name="primary_customer_role">
@@ -23,18 +42,18 @@
           <option value="Referente evento" {% if primary_role == 'Referente evento' %}selected{% endif %}>Referente evento</option>
         </select>
       </label>
-      <label>Nome<input required name="customer_first_name" value="{{ quote.first_name }}"></label>
-      <label>Cognome<input required name="customer_last_name" value="{{ quote.last_name }}"></label>
-      <label>Telefono<input name="customer_phone" value="{{ quote.phone or '' }}"></label>
-      <label>Email<input type="email" name="customer_email" value="{{ quote.email or '' }}"></label>
-      <label>Codice fiscale / P.IVA<input name="customer_fiscal_code" value="{{ quote.fiscal_code or '' }}"></label>
-      <label>Indirizzo<input name="customer_address" value="{{ quote.address or '' }}"></label>
+      <label>Nome *<input required name="customer_first_name" value="{{ quote.first_name }}"></label>
+      <label>Cognome *<input required name="customer_last_name" value="{{ quote.last_name }}"></label>
+      <label>Recapito Telefonico<input name="customer_phone" value="{{ quote.phone or '' }}"></label>
+      <label>Indirizzo Email<input type="email" name="customer_email" value="{{ quote.email or '' }}"></label>
+      <label>Codice Fiscale / Partita IVA<input name="customer_fiscal_code" value="{{ quote.fiscal_code or '' }}"></label>
+      <label>Indirizzo di Residenza<input name="customer_address" value="{{ quote.address or '' }}"></label>
     </div>
-    <label>Note cliente<textarea name="customer_notes" rows="2">{{ quote.customer_notes or '' }}</textarea></label>
+    <label>Note Cliente & Richieste Speciali<textarea name="customer_notes" rows="2">{{ quote.customer_notes or '' }}</textarea></label>
 
     <hr class="soft-separator">
-    <h3>Secondo cliente / sposo / sposa</h3>
-    <p class="muted">Utile per matrimoni o eventi intestati a due persone.</p>
+    <h3>Secondo Intestatario / Sposo / Sposa</h3>
+    <p class="muted">Consigliato per matrimoni o contratti co-intestati.</p>
     <div class="grid-3">
       <label>Ruolo
         <select name="secondary_customer_role">
@@ -48,13 +67,13 @@
       </label>
       <label>Nome<input name="secondary_customer_first_name" value="{{ quote.secondary_customer_first_name or '' }}"></label>
       <label>Cognome<input name="secondary_customer_last_name" value="{{ quote.secondary_customer_last_name or '' }}"></label>
-      <label>Telefono<input name="secondary_customer_phone" value="{{ quote.secondary_customer_phone or '' }}"></label>
-      <label>Email<input type="email" name="secondary_customer_email" value="{{ quote.secondary_customer_email or '' }}"></label>
+      <label>Recapito Telefonico<input name="secondary_customer_phone" value="{{ quote.secondary_customer_phone or '' }}"></label>
+      <label>Indirizzo Email<input type="email" name="secondary_customer_email" value="{{ quote.secondary_customer_email or '' }}"></label>
     </div>
   </div>
 
   <div class="panel form-section span-2">
-    <h2>Dati evento</h2>
+    <h2>Dati Evento & Location</h2>
     <div class="event-picker">
       {% for event in event_types %}
       <label class="event-option">
@@ -64,14 +83,14 @@
       {% endfor %}
     </div>
     <div class="grid-3">
-      <label class="custom-event {% if quote.event_type != 'Generico' %}hidden{% endif %}">Evento personalizzato<input name="custom_event_type" value="{{ quote.custom_event_type or '' }}" placeholder="es. Cena aziendale"></label>
-      <label>Data evento<input type="date" name="event_date" value="{{ quote.event_date or '' }}"></label>
-      <label>Ora inizio<input type="time" name="event_start_time" value="{{ quote.event_start_time or '' }}"></label>
-      <label>Ora fine<input type="time" name="event_end_time" value="{{ quote.event_end_time or '' }}"></label>
-      <label>Adulti<input type="number" min="0" name="guests_adults" value="{{ quote.guests_adults }}" oninput="calcTotal()"></label>
-      <label>Bambini<input type="number" min="0" name="guests_children" value="{{ quote.guests_children }}" oninput="calcTotal()"></label>
-      <label>Location<input name="location" value="{{ quote.location or '' }}"></label>
-      <label>Compilato da
+      <label class="custom-event {% if quote.event_type != 'Generico' %}hidden{% endif %}">Evento Personalizzato<input name="custom_event_type" value="{{ quote.custom_event_type or '' }}" placeholder="es. Cena aziendale"></label>
+      <label>Data Evento *<input type="date" name="event_date" value="{{ quote.event_date or '' }}"></label>
+      <label>Ora Inizio Concordata<input type="time" name="event_start_time" value="{{ quote.event_start_time or '12:00' }}"></label>
+      <label>Ora Conclusione Prevista<input type="time" name="event_end_time" value="{{ quote.event_end_time or '20:00' }}"></label>
+      <label>Numero Ospiti Adulti<input type="number" min="0" name="guests_adults" value="{{ quote.guests_adults }}" oninput="calcTotal()"></label>
+      <label>Numero Ospiti Bambini<input type="number" min="0" name="guests_children" value="{{ quote.guests_children }}" oninput="calcTotal()"></label>
+      <label>Spazio / Location Interna<input name="location" value="{{ quote.location or '' }}"></label>
+      <label>Compilato Da
         <select name="compiled_by_staff_id">
           <option value="">Non indicato</option>
           {% for s in staff %}
@@ -85,16 +104,23 @@
   <div class="panel form-section span-2">
     <div class="panel-head">
       <div>
-        <h2>Menù adulti</h2>
-        <p class="muted">Menù principale per gli ospiti adulti.</p>
+        <h2>Menù Adulti</h2>
+        <p class="muted">Portate e piatti selezionati per gli ospiti adulti.</p>
       </div>
-      <button type="button" class="btn" onclick="addMenuRow()">+ Aggiungi piatto adulti</button>
+      <button type="button" class="btn small" onclick="addMenuRow()">Aggiungi Portata Adulti</button>
     </div>
 
     <div id="menuRows" class="menu-rows">
-      {% for item in items %}
+      {% for item in items if (item.menu_group or 'adult') != 'children' %}
       <div class="menu-row">
-        <input type="hidden" name="menu_group" value="{{ item.menu_group or 'adult' }}">
+        <input type="hidden" name="menu_group" value="adult">
+        <div class="row-header-actions">
+          <span class="row-badge">Menù Adulti</span>
+          <div class="row-order-btns">
+            <button type="button" class="btn icon-btn" onclick="moveRowUp(this)" title="Sposta su">Su</button>
+            <button type="button" class="btn icon-btn" onclick="moveRowDown(this)" title="Sposta giù">Giù</button>
+          </div>
+        </div>
         <div class="grid-4">
           <label>Portata
             <select name="course_type" onchange="toggleCustomCourse(this)">
@@ -104,15 +130,15 @@
             </select>
           </label>
           <label class="custom-course {% if item.course_type != 'Custom' %}hidden{% endif %}">Nome portata custom<input name="custom_course_name" value="{{ item.custom_course_name or '' }}" placeholder="es. Open bar"></label>
-          <label>Nome piatto<input name="dish_name" value="{{ item.dish_name }}" placeholder="es. Risotto agli agrumi"></label>
-          <label>Extra €<input type="number" step="0.01" name="extra_price" value="{{ item.extra_price or 0 }}"></label>
+          <label>Nome Piatto<input name="dish_name" value="{{ item.dish_name }}" placeholder="es. Risotto agli agrumi"></label>
+          <label>Supplemento Extra / persona (€)<input type="number" step="0.01" name="extra_price" value="{{ item.extra_price or 0 }}"></label>
         </div>
         <div class="grid-3">
-          <label>Descrizione<input name="description" value="{{ item.description or '' }}" placeholder="Breve descrizione"></label>
-          <label>Allergeni<input name="allergens" value="{{ item.allergens or '' }}" placeholder="es. glutine, latte"></label>
-          <label>Note<input name="item_notes" value="{{ item.notes or '' }}"></label>
+          <label>Descrizione & Ingredienti<input name="description" value="{{ item.description or '' }}" placeholder="Breve descrizione"></label>
+          <label>Allergeni Noti<input name="allergens" value="{{ item.allergens or '' }}" placeholder="es. Glutine, Crostacei, Latte"></label>
+          <label>Note di Sala / Cucina<input name="item_notes" value="{{ item.notes or '' }}"></label>
         </div>
-        <button type="button" class="btn danger" onclick="this.closest('.menu-row').remove()">Rimuovi</button>
+        <button type="button" class="btn danger small" onclick="this.closest('.menu-row').remove()">Rimuovi Portata</button>
       </div>
       {% endfor %}
     </div>
@@ -121,40 +147,86 @@
   <div class="panel form-section span-2">
     <div class="panel-head">
       <div>
-        <h2>Menù bambini</h2>
-        <p class="muted">Menù dedicato ai bambini, tipicamente antipasto, primo e secondo.</p>
+        <h2>Menù Bambini</h2>
+        <p class="muted">Menù dedicato ai bambini (antipasto, primo e secondo piatto).</p>
       </div>
-      <button type="button" class="btn" onclick="addChildMenuRow()">+ Aggiungi piatto bambini</button>
+      <button type="button" class="btn small" onclick="addChildMenuRow()">Aggiungi Portata Bambini</button>
     </div>
-    <div id="childMenuRows" class="menu-rows"></div>
+    <div id="childMenuRows" class="menu-rows">
+      {% for item in items if item.menu_group == 'children' %}
+      <div class="menu-row child-menu-row">
+        <input type="hidden" name="menu_group" value="children">
+        <div class="row-header-actions">
+          <span class="row-badge child">Menù Bambini</span>
+          <div class="row-order-btns">
+            <button type="button" class="btn icon-btn" onclick="moveRowUp(this)" title="Sposta su">Su</button>
+            <button type="button" class="btn icon-btn" onclick="moveRowDown(this)" title="Sposta giù">Giù</button>
+          </div>
+        </div>
+        <div class="grid-4">
+          <label>Portata
+            <select name="course_type" onchange="toggleCustomCourse(this)">
+              {% for c in course_types %}
+              <option value="{{ c }}" {% if item.course_type == c %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="custom-course {% if item.course_type != 'Custom' %}hidden{% endif %}">Nome portata custom<input name="custom_course_name" value="{{ item.custom_course_name or '' }}" placeholder="es. Merenda bambini"></label>
+          <label>Nome Piatto<input name="dish_name" value="{{ item.dish_name }}" placeholder="es. Pasta al pomodoro"></label>
+          <label>Supplemento Extra / persona (€)<input type="number" step="0.01" name="extra_price" value="{{ item.extra_price or 0 }}"></label>
+        </div>
+        <div class="grid-3">
+          <label>Descrizione & Ingredienti<input name="description" value="{{ item.description or '' }}" placeholder="Breve descrizione"></label>
+          <label>Allergeni Noti<input name="allergens" value="{{ item.allergens or '' }}" placeholder="es. Glutine, Latte"></label>
+          <label>Note di Servizio<input name="item_notes" value="{{ item.notes or '' }}"></label>
+        </div>
+        <button type="button" class="btn danger small" onclick="this.closest('.menu-row').remove()">Rimuovi Portata</button>
+      </div>
+      {% endfor %}
+    </div>
   </div>
 
   <div class="panel form-section">
-    <h2>Riepilogo economico</h2>
+    <h2>Prospetto Economico</h2>
     <div class="grid-2">
-      <label>Prezzo adulto<input type="number" step="0.01" name="price_per_adult" value="{{ quote.price_per_adult }}" oninput="calcTotal()"></label>
-      <label>Prezzo bambino<input type="number" step="0.01" name="price_per_child" value="{{ quote.price_per_child }}" oninput="calcTotal()"></label>
-      <label>Extra<input type="number" step="0.01" name="extra_amount" value="{{ quote.extra_amount }}" oninput="calcTotal()"></label>
-      <label>Sconto<input type="number" step="0.01" name="discount_amount" value="{{ quote.discount_amount }}" oninput="calcTotal()"></label>
-      <label>IVA %<input type="number" step="0.01" name="vat_rate" value="{{ quote.vat_rate }}" oninput="calcTotal()"></label>
-      <div class="total-box"><span>Totale stimato</span><strong id="totalPreview">€ 0,00</strong></div>
+      <label>Prezzo per Adulto (€)<input type="number" step="0.01" name="price_per_adult" value="{{ quote.price_per_adult }}" oninput="calcTotal()"></label>
+      <label>Prezzo per Bambino (€)<input type="number" step="0.01" name="price_per_child" value="{{ quote.price_per_child }}" oninput="calcTotal()"></label>
+      <label>Servizi Extra & Dotazioni (€)<input type="number" step="0.01" name="extra_amount" value="{{ quote.extra_amount }}" oninput="calcTotal()"></label>
+      <label>Sconto Concordato (€)<input type="number" step="0.01" name="discount_amount" value="{{ quote.discount_amount }}" oninput="calcTotal()"></label>
+      <label>Aliquota IVA (%)<input type="number" step="0.01" name="vat_rate" value="{{ quote.vat_rate }}" oninput="calcTotal()"></label>
+    </div>
+
+    <!-- Box riepilogo dettagliato -->
+    <div class="total-box-detailed">
+      <div class="calc-row"><span>Subtotale Adulti:</span><strong id="subAdultsPreview">€ 0,00</strong></div>
+      <div class="calc-row"><span>Subtotale Bambini:</span><strong id="subChildrenPreview">€ 0,00</strong></div>
+      <div class="calc-row"><span>Imponibile Netto:</span><strong id="netPreview">€ 0,00</strong></div>
+      <div class="calc-row"><span>Imposta IVA:</span><strong id="vatPreview">€ 0,00</strong></div>
+      <div class="calc-row total-highlight"><span>Totale Complessivo:</span><strong id="totalPreview">€ 0,00</strong></div>
     </div>
   </div>
 
   <div class="panel form-section">
-    <h2>Note preventivo</h2>
-    <textarea name="notes" rows="11" placeholder="Inserisci note organizzative, richieste del cliente, vincoli alimentari, ecc.">{{ quote.notes or '' }}</textarea>
+    <h2>Note & Accordi Operativi</h2>
+    <textarea name="notes" rows="12" placeholder="Inserisci note organizzative, richieste del cliente, vincoli alimentari, ecc.">{{ quote.notes or '' }}</textarea>
   </div>
 
   <div class="span-2 actions sticky-actions">
     <a class="btn" href="/quotes/{{ quote.id }}">Annulla</a>
-    <button class="btn primary" type="submit">Salva modifiche</button>
+    <button class="btn primary" type="submit">Salva Modifiche</button>
   </div>
 </form>
 
 <template id="menuRowTemplate">
   <div class="menu-row">
     <input type="hidden" name="menu_group" value="adult">
+    <div class="row-header-actions">
+      <span class="row-badge">Menù Adulti</span>
+      <div class="row-order-btns">
+        <button type="button" class="btn icon-btn" onclick="moveRowUp(this)" title="Sposta su">Su</button>
+        <button type="button" class="btn icon-btn" onclick="moveRowDown(this)" title="Sposta giù">Giù</button>
+      </div>
+    </div>
     <div class="grid-4">
       <label>Portata
         <select name="course_type" onchange="toggleCustomCourse(this)">
@@ -162,22 +234,28 @@
         </select>
       </label>
       <label class="custom-course hidden">Nome portata custom<input name="custom_course_name" placeholder="es. Open bar"></label>
-      <label>Nome piatto<input name="dish_name" placeholder="es. Risotto agli agrumi"></label>
-      <label>Extra €<input type="number" step="0.01" name="extra_price" value="0"></label>
+      <label>Nome Piatto<input name="dish_name" placeholder="es. Risotto agli agrumi"></label>
+      <label>Supplemento Extra / persona (€)<input type="number" step="0.01" name="extra_price" value="0"></label>
     </div>
     <div class="grid-3">
-      <label>Descrizione<input name="description" placeholder="Breve descrizione"></label>
-      <label>Allergeni<input name="allergens" placeholder="es. glutine, latte"></label>
-      <label>Note<input name="item_notes"></label>
+      <label>Descrizione & Ingredienti<input name="description" placeholder="Breve descrizione"></label>
+      <label>Allergeni Noti<input name="allergens" placeholder="es. Glutine, Crostacei, Latte"></label>
+      <label>Note di Sala / Cucina<input name="item_notes" placeholder="Note per sala / cucina"></label>
     </div>
-    <button type="button" class="btn danger" onclick="this.closest('.menu-row').remove()">Rimuovi</button>
+    <button type="button" class="btn danger small" onclick="this.closest('.menu-row').remove()">Rimuovi Portata</button>
   </div>
 </template>
-
 
 <template id="childMenuRowTemplate">
   <div class="menu-row child-menu-row">
     <input type="hidden" name="menu_group" value="children">
+    <div class="row-header-actions">
+      <span class="row-badge child">Menù Bambini</span>
+      <div class="row-order-btns">
+        <button type="button" class="btn icon-btn" onclick="moveRowUp(this)" title="Sposta su">Su</button>
+        <button type="button" class="btn icon-btn" onclick="moveRowDown(this)" title="Sposta giù">Giù</button>
+      </div>
+    </div>
     <div class="grid-4">
       <label>Portata
         <select name="course_type" onchange="toggleCustomCourse(this)">
@@ -185,31 +263,69 @@
         </select>
       </label>
       <label class="custom-course hidden">Nome portata custom<input name="custom_course_name" placeholder="es. Merenda bambini"></label>
-      <label>Nome piatto<input name="dish_name" placeholder="es. Pasta al pomodoro"></label>
-      <label>Extra €<input type="number" step="0.01" name="extra_price" value="0"></label>
+      <label>Nome Piatto<input name="dish_name" placeholder="es. Pasta al pomodoro"></label>
+      <label>Supplemento Extra / persona (€)<input type="number" step="0.01" name="extra_price" value="0"></label>
     </div>
     <div class="grid-3">
-      <label>Descrizione<input name="description" placeholder="Breve descrizione"></label>
-      <label>Allergeni<input name="allergens" placeholder="es. glutine, latte"></label>
-      <label>Note<input name="item_notes"></label>
+      <label>Descrizione & Ingredienti<input name="description" placeholder="Breve descrizione"></label>
+      <label>Allergeni Noti<input name="allergens" placeholder="es. Glutine, Latte"></label>
+      <label>Note di Servizio<input name="item_notes" placeholder="Note per cucina"></label>
     </div>
-    <button type="button" class="btn danger" onclick="this.closest('.menu-row').remove()">Rimuovi</button>
+    <button type="button" class="btn danger small" onclick="this.closest('.menu-row').remove()">Rimuovi Portata</button>
   </div>
 </template>
 
 <script>
-function addMenuRow(course) {
+function addMenuRow(course, data) {
   const tpl = document.getElementById('menuRowTemplate');
   const node = tpl.content.cloneNode(true);
   if (course) node.querySelector('select[name="course_type"]').value = course;
+  if (data) {
+    if (data.course_type) node.querySelector('select[name="course_type"]').value = data.course_type;
+    if (data.custom_course_name) {
+      node.querySelector('input[name="custom_course_name"]').value = data.custom_course_name;
+      node.querySelector('.custom-course').classList.remove('hidden');
+    }
+    if (data.dish_name) node.querySelector('input[name="dish_name"]').value = data.dish_name;
+    if (data.description) node.querySelector('input[name="description"]').value = data.description;
+    if (data.allergens) node.querySelector('input[name="allergens"]').value = data.allergens;
+    if (data.item_notes) node.querySelector('input[name="item_notes"]').value = data.item_notes;
+    if (data.extra_price) node.querySelector('input[name="extra_price"]').value = data.extra_price;
+  }
   document.getElementById('menuRows').appendChild(node);
 }
 
-function addChildMenuRow(course) {
+function addChildMenuRow(course, data) {
   const tpl = document.getElementById('childMenuRowTemplate');
   const node = tpl.content.cloneNode(true);
   if (course) node.querySelector('select[name="course_type"]').value = course;
+  if (data) {
+    if (data.course_type) node.querySelector('select[name="course_type"]').value = data.course_type;
+    if (data.custom_course_name) {
+      node.querySelector('input[name="custom_course_name"]').value = data.custom_course_name;
+      node.querySelector('.custom-course').classList.remove('hidden');
+    }
+    if (data.dish_name) node.querySelector('input[name="dish_name"]').value = data.dish_name;
+    if (data.description) node.querySelector('input[name="description"]').value = data.description;
+    if (data.allergens) node.querySelector('input[name="allergens"]').value = data.allergens;
+    if (data.item_notes) node.querySelector('input[name="item_notes"]').value = data.item_notes;
+    if (data.extra_price) node.querySelector('input[name="extra_price"]').value = data.extra_price;
+  }
   document.getElementById('childMenuRows').appendChild(node);
+}
+
+function moveRowUp(btn) {
+  const row = btn.closest('.menu-row');
+  if (row.previousElementSibling) {
+    row.parentNode.insertBefore(row, row.previousElementSibling);
+  }
+}
+
+function moveRowDown(btn) {
+  const row = btn.closest('.menu-row');
+  if (row.nextElementSibling) {
+    row.parentNode.insertBefore(row.nextElementSibling, row);
+  }
 }
 
 function toggleCustomEvent() {
@@ -235,13 +351,50 @@ function calcTotal() {
   const discount = val('discount_amount');
   const vat = val('vat_rate');
 
-  let subtotal = Math.max((adults * pa) + (children * pc) + extra - discount, 0);
-  let total = subtotal + (subtotal * vat / 100);
+  const subAdults = adults * pa;
+  const subChildren = children * pc;
+  const net = Math.max(subAdults + subChildren + extra - discount, 0);
+  const vatAmount = (net * vat) / 100;
+  const total = net + vatAmount;
 
-  document.getElementById('totalPreview').innerText = total.toLocaleString('it-IT', {style:'currency', currency:'EUR'});
+  const fmt = (v) => v.toLocaleString('it-IT', {style:'currency', currency:'EUR'});
+  document.getElementById('subAdultsPreview').innerText = fmt(subAdults);
+  document.getElementById('subChildrenPreview').innerText = fmt(subChildren);
+  document.getElementById('netPreview').innerText = fmt(net);
+  document.getElementById('vatPreview').innerText = fmt(vatAmount);
+  document.getElementById('totalPreview').innerText = fmt(total);
 }
 
-if (document.querySelectorAll('#menuRows .menu-row').length === 0) {
+async function applySelectedPreset() {
+  const select = document.getElementById('presetSelect');
+  const key = select.value;
+  if (!key) return;
+
+  const res = await fetch(`/api/presets/${key}`);
+  const data = await res.json();
+  if (data.error) return;
+
+  if (confirm(`Confermi l'applicazione del modello "${data.name}"? Le portate attuali verranno sostituite.`)) {
+    document.getElementById('menuRows').innerHTML = '';
+    document.getElementById('childMenuRows').innerHTML = '';
+
+    if (data.adult_items) {
+      data.adult_items.forEach(it => addMenuRow(null, it));
+    }
+    if (data.child_items) {
+      data.child_items.forEach(it => addChildMenuRow(null, it));
+    }
+    if (data.suggested_price_adult) {
+      document.querySelector('[name="price_per_adult"]').value = data.suggested_price_adult;
+    }
+    if (data.suggested_price_child) {
+      document.querySelector('[name="price_per_child"]').value = data.suggested_price_child;
+    }
+    calcTotal();
+  }
+}
+
+if (document.querySelectorAll('#menuRows .menu-row').length === 0 && document.querySelectorAll('#childMenuRows .menu-row').length === 0) {
   addMenuRow();
 }
 

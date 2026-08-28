@@ -1,35 +1,37 @@
 {% extends "base.html" %}
-{% block title %}Backup{% endblock %}
+{% block title %}Archivio di Sicurezza & Backup | Tenuta Turrita{% endblock %}
 {% block content %}
 <section class="hero small">
   <div>
-    <p class="eyebrow">Protezione dati</p>
-    <h1>Backup</h1>
-    <p class="muted">Crea un backup ZIP con database e PDF. Se configurato, viene caricato anche su Google Drive.</p>
+    <p class="eyebrow">Tenuta Turrita · Protezione Dati & Disaster Recovery</p>
+    <h1>Backup & Archivio Dati</h1>
+    <p class="muted">Genera un pacchetto compresso ZIP contenente il database SQLite transazionale e tutti i documenti PDF dei preventivi archiviati.</p>
   </div>
-  <form method="post"><button class="btn primary">Crea backup</button></form>
+  <form method="post"><button class="btn primary">Genera Nuovo Backup</button></form>
 </section>
 
 <div class="panel">
-  <h2>Stato backup cloud</h2>
-  <p>Google Drive: <strong>{{ 'abilitato' if settings.drive_backup_enabled == 'true' else 'non abilitato' }}</strong></p>
+  <div class="panel-head"><h2>Stato Sincronizzazione Cloud</h2></div>
+  <p>Backup automatico su Google Drive: <strong>{{ 'Attivo ed abilitato' if settings.drive_backup_enabled == 'true' else 'Non configurato (solo locale)' }}</strong></p>
 </div>
 
 <div class="panel">
-  <h2>Storico backup</h2>
+  <div class="panel-head"><h2>Storico Backup Generati</h2></div>
   <table>
-    <thead><tr><th>Data</th><th>Tipo</th><th>Stato</th><th>Drive ID</th><th>Errore</th><th></th></tr></thead>
+    <thead><tr><th>Data & Ora Creazione</th><th>Destinazione</th><th>Esito</th><th>ID Google Drive</th><th>Note di Errore</th><th style="text-align:right;">Download</th></tr></thead>
     <tbody>
       {% for j in jobs %}
       <tr>
-        <td>{{ j.created_at }}</td>
-        <td>{{ j.backup_type }}</td>
-        <td>{{ j.status }}</td>
+        <td><strong>{{ j.created_at }}</strong></td>
+        <td>{{ 'Cloud Google Drive' if j.backup_type == 'google_drive' else 'Archivio Locale ZIP' }}</td>
+        <td><span class="badge {{ 'accettato' if j.status in ['uploaded', 'success', 'completed'] else ('rifiutato' if j.status == 'failed' else 'in_attesa') }}">{{ j.status }}</span></td>
         <td>{{ j.google_drive_file_id or '-' }}</td>
         <td>{{ j.error_message or '-' }}</td>
-        <td><a class="btn" href="/backup/download/{{ j.id }}">Scarica</a></td>
+        <td style="text-align:right;"><a class="btn small" href="/backup/download/{{ j.id }}">Scarica Archivio</a></td>
       </tr>
-      {% else %}<tr><td colspan="6" class="muted">Nessun backup creato.</td></tr>{% endfor %}
+      {% else %}
+      <tr><td colspan="6" class="muted">Nessun backup registrato nell'archivio.</td></tr>
+      {% endfor %}
     </tbody>
   </table>
 </div>
