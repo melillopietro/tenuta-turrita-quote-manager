@@ -33,8 +33,7 @@ from app.services.quote_service import (
 )
 
 from contextlib import asynccontextmanager
-
-BASE_DIR = Path(__file__).resolve().parent
+from app.paths import STATIC_DIR, TEMPLATES_DIR
 
 
 @asynccontextmanager
@@ -44,8 +43,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Tenuta Turrita Quote Manager", version="0.2.0", lifespan=lifespan)
-app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
-templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 templates.env.filters["eur"] = eur
 
 

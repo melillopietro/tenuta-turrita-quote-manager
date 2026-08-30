@@ -4,15 +4,7 @@ import sqlite3
 from pathlib import Path
 from typing import Any, Iterable
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = BASE_DIR / "data"
-DB_PATH = DATA_DIR / "restaurant_quotes.db"
-PDF_DIR = DATA_DIR / "pdfs"
-BACKUP_DIR = DATA_DIR / "backups"
-
-DATA_DIR.mkdir(exist_ok=True)
-PDF_DIR.mkdir(exist_ok=True)
-BACKUP_DIR.mkdir(exist_ok=True)
+from app.paths import BACKUP_DIR, BASE_DIR, DATA_DIR, DB_PATH, PDF_DIR
 
 
 def get_connection() -> sqlite3.Connection:

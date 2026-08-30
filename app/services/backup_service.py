@@ -5,7 +5,8 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 
-from app.db import BACKUP_DIR, DATA_DIR, DB_PATH, execute, get_setting
+from app.db import execute, get_setting
+from app.paths import BACKUP_DIR, DATA_DIR, DB_PATH, PDF_DIR
 
 SCOPES = ["https://www.googleapis.com/auth/drive.file"]
 

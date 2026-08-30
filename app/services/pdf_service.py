@@ -18,16 +18,14 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from app.db import PDF_DIR, execute, settings_dict
+from app.db import execute, settings_dict
+from app.paths import LOGO_PATH, PDF_DIR
 from app.services.quote_service import (
     calculate_quote_breakdown,
     get_quote,
     get_quote_contract,
     get_quote_items,
 )
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-LOGO_PATH = BASE_DIR / "static" / "tenuta_turrita_logo.png"
 
 
 def eur(value: float | int | None) -> str:

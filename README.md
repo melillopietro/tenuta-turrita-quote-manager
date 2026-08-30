@@ -92,24 +92,33 @@ Gestionale professionale per la pianificazione gastronomica, stesura contrattual
 
 ## Guida all'Installazione & Avvio
 
-### 1. Clonazione del Repository
+### Versione Windows (.exe & Script Batch)
 
-```bash
-git clone https://github.com/melillopietro/tenuta-turrita-quote-manager.git
-cd tenuta-turrita-quote-manager
-```
+Su ambiente **Windows** sono disponibili tre modalità di utilizzo:
 
-### 2. Creazione dell'Ambiente Virtuale & Dipendenze
+#### 1. Download Eseguibile Standalone (.exe)
+- Scarica il file **`TenutaTurritaQuoteManager-Windows.zip`** dalla sezione **Actions / Releases** di GitHub.
+- Estrai il file zip ed esegui direttamente **`TenutaTurritaQuoteManager.exe`** con un doppio clic.
+- L'applicazione desktop creerà automaticamente il database e aprirà il browser web senza bisogno di installare Python.
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
+#### 2. Avvio Rapido con Script Batch (`avvia_windows.bat`)
+- Se hai clonato la repository su Windows, fai doppio clic su **`avvia_windows.bat`**.
+- Lo script crea automaticamente l'ambiente `.venv`, installa le dipendenze al primo avvio e lancia il gestionale nel browser.
+
+#### 3. Compilazione Locale del File .exe (`compila_exe_windows.bat`)
+- Per ricompilare il file `.exe` su Windows in locale:
+  ```cmd
+  compila_exe_windows.bat
+  ```
+  Oppure da riga di comando:
+  ```cmd
+  python build_windows.py
+  ```
+  Il file eseguibile finale sarà generato all'interno della cartella `dist\TenutaTurritaQuoteManager.exe`.
 
 ---
 
-### Avvio Rapido su macOS (Doppio Clic)
+### Avvio su macOS (Doppio Clic)
 
 Su macOS è disponibile lo script di lancio diretto:
 
@@ -119,18 +128,15 @@ Su macOS è disponibile lo script di lancio diretto:
 
 ---
 
-### Avvio Standard da Terminale
-
-Con lo script di avvio integrato (con auto-rilevamento dell'ambiente virtuale):
+### Avvio Standard da Terminale (macOS / Linux / Windows)
 
 ```bash
-./run_local.py
-```
-
-Oppure tramite **Uvicorn**:
-
-```bash
-.venv/bin/uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+git clone https://github.com/melillopietro/tenuta-turrita-quote-manager.git
+cd tenuta-turrita-quote-manager
+python3 -m venv .venv
+source .venv/bin/activate    # Su Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+./run_local.py               # Oppure: python desktop_app.py
 ```
 
 - **Dashboard Gestionale**: `http://127.0.0.1:8000`
@@ -215,9 +221,12 @@ tests/test_app.py::test_fastapi_endpoints PASSED                         [100%]
 
 ```text
 tenuta-turrita-quote-manager/
+├── .github/workflows/
+│   └── build-windows-exe.yml    # Pipeline CI/CD per compilazione automatica .exe
 ├── app/
 │   ├── main.py                  # Router principale FastAPI, Lifespan e middleware
 │   ├── db.py                    # Gestore connessione SQLite, inizializzazione schema
+│   ├── paths.py                 # Risoluzione percorsi compatibile con .exe congelati
 │   ├── services/
 │   │   ├── quote_service.py     # Logica di business, modelli gastronomici e calcoli
 │   │   ├── pdf_service.py       # Motore ReportLab luxury con NumberedCanvas
@@ -225,6 +234,7 @@ tenuta-turrita-quote-manager/
 │   │   └── backup_service.py    # Backup transazionale SQLite e sync Google Drive
 │   ├── static/
 │   │   ├── style.css            # Fogli di stile istituzionali Tenuta Turrita
+│   │   ├── app_icon.ico         # Icona desktop applicazione Windows
 │   │   ├── tenuta_turrita_logo.png
 │   │   └── tenuta_turrita_logo.svg
 │   ├── templates/
@@ -246,6 +256,10 @@ tenuta-turrita-quote-manager/
 │   └── backups/                 # Archivi compressi di backup
 ├── tests/
 │   └── test_app.py              # Suite di test automatizzati pytest
+├── desktop_app.py               # Entrypoint applicazione desktop (PyInstaller)
+├── build_windows.py             # Script Python di compilazione .exe
+├── avvia_windows.bat            # Launcher rapido per Windows (con auto-setup)
+├── compila_exe_windows.bat      # Script batch per compilare l'eseguibile su Windows
 ├── avvia_mac.command            # Launcher con doppio clic per macOS Finder
 ├── run_local.py                 # Script di avvio con auto-rilevamento venv
 ├── requirements.txt             # Dipendenze Python
