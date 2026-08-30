@@ -12,6 +12,9 @@ jobs:
   build-windows:
     name: Build Windows Executable (.exe)
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
 
     steps:
       - name: Checkout Repository
@@ -26,21 +29,18 @@ jobs:
       - name: Install Dependencies & PyInstaller
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller pillow
+          python -m pip install -r requirements.txt
 
-      - name: Generate Icon & Build Executable
+      - name: Build Windows Executable
         run: |
-          python -c "from PIL import Image; img = Image.open('app/static/tenuta_turrita_logo.png'); img.save('app/static/app_icon.ico', format='ICO', sizes=[(256,256),(128,128),(64,64),(48,48),(32,32),(16,16)])"
           python build_windows.py
 
-      - name: Prepare Distribution ZIP
-        shell: pwsh
+      - name: Prepare Distribution Package
         run: |
-          New-Item -ItemType Directory -Force -Path dist_package
+          New-Item -ItemType Directory -Force -Path dist_package | Out-Null
           Copy-Item "dist/TenutaTurritaQuoteManager.exe" -Destination "dist_package/TenutaTurritaQuoteManager.exe"
           Copy-Item "README.md" -Destination "dist_package/README.md"
-          Compress-Archive -Path "dist_package/*" -DestinationPath "TenutaTurritaQuoteManager-Windows.zip"
+          Compress-Archive -Path "dist_package/*" -DestinationPath "TenutaTurritaQuoteManager-Windows.zip" -Force
 
       - name: Upload Windows Executable Artifact
         uses: actions/upload-artifact@v4
@@ -48,3 +48,5 @@ jobs:
           name: TenutaTurritaQuoteManager-Windows
           path: TenutaTurritaQuoteManager-Windows.zip
           retention-days: 30
+          if-no-files-found: error
+

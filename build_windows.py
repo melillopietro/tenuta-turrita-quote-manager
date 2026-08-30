@@ -9,23 +9,52 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 
 
+def ensure_icon() -> Path | None:
+    icon_path = BASE_DIR / "app" / "static" / "app_icon.ico"
+    png_path = BASE_DIR / "app" / "static" / "tenuta_turrita_logo.png"
+
+    if icon_path.exists():
+        return icon_path
+
+    if png_path.exists():
+        try:
+            from PIL import Image
+
+            img = Image.open(png_path)
+            icon_path.parent.mkdir(parents=True, exist_ok=True)
+            img.save(
+                icon_path,
+                format="ICO",
+                sizes=[(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)],
+            )
+            print(f"[INFO] Icona Windows generata: {icon_path}")
+            return icon_path
+        except Exception as exc:
+            print(f"[AVVISO] Impossibile generare icona: {exc}")
+
+    return None
+
+
 def build(onefile: bool = True) -> None:
     print("=" * 70)
-    print(" Compilazione Eseguibile Windows (.exe) - Tenuta Turrita")
+    print(" TENUTA TURRITA - COMPILAZIONE ESEGUIBILE WINDOWS (.EXE)")
     print("=" * 70)
 
     try:
         import PyInstaller
     except ImportError:
-        print("Installazione di PyInstaller in corso...")
+        print("[INFO] Installazione PyInstaller in corso...")
         subprocess.check_call([sys.executable, "-m", "pip", "install", "pyinstaller"])
 
-    sep = ";" if sys.platform == "win32" else ":"
-
-    icon_path = BASE_DIR / "app" / "static" / "app_icon.ico"
-    icon_arg = ["--icon", str(icon_path)] if icon_path.exists() else []
+    icon_path = ensure_icon()
+    icon_arg = ["--icon", str(icon_path)] if icon_path and icon_path.exists() else []
 
     mode_arg = ["--onefile"] if onefile else ["--onedir"]
+
+    templates_dir = BASE_DIR / "app" / "templates"
+    static_dir = BASE_DIR / "app" / "static"
+
+    sep = ";" if sys.platform == "win32" else ":"
 
     cmd = [
         sys.executable,
@@ -38,73 +67,41 @@ def build(onefile: bool = True) -> None:
         "--clean",
         *icon_arg,
         "--add-data",
-        f"app/templates{sep}app/templates",
+        f"{templates_dir}{sep}app/templates",
         "--add-data",
-        f"app/static{sep}app/static",
-        "--hidden-import",
-        "uvicorn.logging",
-        "--hidden-import",
-        "uvicorn.loops",
-        "--hidden-import",
-        "uvicorn.loops.auto",
-        "--hidden-import",
-        "uvicorn.protocols",
-        "--hidden-import",
-        "uvicorn.protocols.http",
-        "--hidden-import",
-        "uvicorn.protocols.http.auto",
-        "--hidden-import",
-        "uvicorn.protocols.http.h11_impl",
-        "--hidden-import",
-        "uvicorn.protocols.http.httptools_impl",
-        "--hidden-import",
-        "uvicorn.protocols.websockets",
-        "--hidden-import",
-        "uvicorn.protocols.websockets.auto",
-        "--hidden-import",
-        "uvicorn.protocols.websockets.wsproto_impl",
-        "--hidden-import",
-        "uvicorn.protocols.websockets.websockets_impl",
-        "--hidden-import",
-        "uvicorn.lifespans",
-        "--hidden-import",
-        "uvicorn.lifespans.on",
-        "--hidden-import",
-        "uvicorn.lifespans.off",
-        "--hidden-import",
-        "reportlab",
-        "--hidden-import",
-        "reportlab.lib",
-        "--hidden-import",
-        "reportlab.platypus",
-        "--hidden-import",
-        "reportlab.pdfgen",
-        "--hidden-import",
-        "jinja2",
-        "--hidden-import",
-        "starlette",
-        "--hidden-import",
+        f"{static_dir}{sep}app/static",
+        "--collect-all",
+        "uvicorn",
+        "--collect-all",
         "fastapi",
+        "--collect-all",
+        "reportlab",
+        "--collect-all",
+        "starlette",
+        "--collect-all",
+        "jinja2",
         "--hidden-import",
         "anyio",
         "--hidden-import",
         "email",
         "--hidden-import",
         "sqlite3",
+        "--hidden-import",
+        "multiprocessing",
         "desktop_app.py",
     ]
 
-    print(f"Esecuzione PyInstaller ({'--onefile' if onefile else '--onedir'})...")
+    print("[INFO] Esecuzione comando PyInstaller...")
     subprocess.check_call(cmd, cwd=BASE_DIR)
 
     dist_dir = BASE_DIR / "dist"
-    print("
-" + "=" * 70)
-    print(" Compilazione completata con successo!")
-    print(f" File generato in: {dist_dir}")
+    print("\n" + "=" * 70)
+    print(" [OK] Compilazione completata con successo!")
+    print(f" Output: {dist_dir}")
     print("=" * 70)
 
 
 if __name__ == "__main__":
     is_onefile = "--onedir" not in sys.argv
     build(onefile=is_onefile)
+
