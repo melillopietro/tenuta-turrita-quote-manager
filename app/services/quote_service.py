@@ -81,8 +81,9 @@ def money(value: Any) -> float:
     if value in (None, ""):
         return 0.0
     try:
-        return float(str(value).replace(",", "."))
-    except ValueError:
+        val = float(str(value).replace(",", ".").strip())
+        return round(max(val, 0.0), 2)
+    except (ValueError, TypeError):
         return 0.0
 
 
@@ -90,8 +91,9 @@ def integer(value: Any) -> int:
     if value in (None, ""):
         return 0
     try:
-        return int(value)
-    except ValueError:
+        val = int(value)
+        return max(val, 0)
+    except (ValueError, TypeError):
         return 0
 
 
@@ -104,19 +106,27 @@ def calculate_quote_breakdown(
     discount_amount: float,
     vat_rate: float,
 ) -> dict[str, float]:
-    adults_subtotal = round(max(guests_adults, 0) * max(price_per_adult, 0.0), 2)
-    children_subtotal = round(max(guests_children, 0) * max(price_per_child, 0.0), 2)
-    raw_subtotal = adults_subtotal + children_subtotal + max(extra_amount, 0.0) - max(discount_amount, 0.0)
+    adults = max(integer(guests_adults), 0)
+    children = max(integer(guests_children), 0)
+    price_adult = max(money(price_per_adult), 0.0)
+    price_child = max(money(price_per_child), 0.0)
+    extra = max(money(extra_amount), 0.0)
+    discount = max(money(discount_amount), 0.0)
+    vat = max(money(vat_rate), 0.0)
+
+    adults_subtotal = round(adults * price_adult, 2)
+    children_subtotal = round(children * price_child, 2)
+    raw_subtotal = adults_subtotal + children_subtotal + extra - discount
     net_taxable = round(max(raw_subtotal, 0.0), 2)
-    vat_amount = round(net_taxable * max(vat_rate, 0.0) / 100.0, 2)
+    vat_amount = round(net_taxable * vat / 100.0, 2)
     total_amount = round(net_taxable + vat_amount, 2)
     return {
         "adults_subtotal": adults_subtotal,
         "children_subtotal": children_subtotal,
-        "extra_amount": round(extra_amount, 2),
-        "discount_amount": round(discount_amount, 2),
+        "extra_amount": extra,
+        "discount_amount": discount,
         "net_taxable": net_taxable,
-        "vat_rate": vat_rate,
+        "vat_rate": vat,
         "vat_amount": vat_amount,
         "total_amount": total_amount,
     }
@@ -146,7 +156,6 @@ def calculate_total(
 def next_quote_number() -> tuple[str, int, int]:
     year = datetime.now().year
     with get_connection() as conn:
-        conn.execute("BEGIN IMMEDIATE")
         row = conn.execute("SELECT last_number FROM quote_counters WHERE year = ?", (year,)).fetchone()
         if row is None:
             progressive = 1
@@ -201,8 +210,10 @@ def create_quote(form: dict[str, Any]) -> int:
                 quote_number, year, progressive_number, customer_id, event_type, custom_event_type,
                 event_date, event_start_time, event_end_time, guests_adults, guests_children,
                 location, status, compiled_by_staff_id, price_per_adult, price_per_child,
-                extra_amount, discount_amount, vat_rate, total_amount, notes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                extra_amount, discount_amount, vat_rate, total_amount, notes,
+                primary_customer_role, secondary_customer_role, secondary_customer_first_name,
+                secondary_customer_last_name, secondary_customer_phone, secondary_customer_email
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 quote_number,
@@ -226,30 +237,14 @@ def create_quote(form: dict[str, Any]) -> int:
                 vat_rate,
                 total_amount,
                 form.get("notes", "").strip(),
-            ),
-        ).lastrowid
-
-        conn.execute(
-            """
-            UPDATE quotes
-            SET primary_customer_role = ?,
-                secondary_customer_role = ?,
-                secondary_customer_first_name = ?,
-                secondary_customer_last_name = ?,
-                secondary_customer_phone = ?,
-                secondary_customer_email = ?
-            WHERE id = ?
-            """,
-            (
                 form.get("primary_customer_role", "").strip(),
                 form.get("secondary_customer_role", "").strip(),
                 form.get("secondary_customer_first_name", "").strip(),
                 form.get("secondary_customer_last_name", "").strip(),
                 form.get("secondary_customer_phone", "").strip(),
                 form.get("secondary_customer_email", "").strip(),
-                quote_id,
             ),
-        )
+        ).lastrowid
 
         course_types = form.get("course_type", [])
         custom_courses = form.get("custom_course_name", [])

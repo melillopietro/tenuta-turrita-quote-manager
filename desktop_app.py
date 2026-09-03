@@ -11,12 +11,28 @@ import webbrowser
 if __name__ == "__main__":
     multiprocessing.freeze_support()
 
+import socket
 import uvicorn
 from app.db import init_db
 from app.main import app
 
 HOST = "127.0.0.1"
-PORT = 8000
+
+
+def find_available_port(host: str = "127.0.0.1", start_port: int = 8000) -> int:
+    port = start_port
+    while port < start_port + 50:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                s.bind((host, port))
+                return port
+            except OSError:
+                port += 1
+    return start_port
+
+
+PORT = find_available_port(HOST, 8000)
 URL = f"http://{HOST}:{PORT}"
 
 

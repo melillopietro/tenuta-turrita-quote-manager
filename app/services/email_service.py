@@ -57,7 +57,8 @@ Tel. {company_phone}
 """
 
     # Elegant HTML Email Template matching Tenuta Turrita theme
-    html_paragraphs = "".join(f"<p style='margin: 0 0 12px 0; font-size: 14.5px; line-height: 1.6; color: #2F352C;'>{p.strip()}</p>" for p in plain_body.split("\n\n") if p.strip())
+    import html
+    html_paragraphs = "".join(f"<p style='margin: 0 0 12px 0; font-size: 14.5px; line-height: 1.6; color: #2F352C;'>{html.escape(p.strip())}</p>" for p in plain_body.split("\n\n") if p.strip())
 
     html_body = f"""<!DOCTYPE html>
 <html>
@@ -133,8 +134,9 @@ Tel. {company_phone}
         else:
             with smtplib.SMTP(host, port, timeout=20) as smtp:
                 smtp.ehlo()
-                smtp.starttls()
-                smtp.ehlo()
+                if smtp.has_extn("starttls"):
+                    smtp.starttls()
+                    smtp.ehlo()
                 if username:
                     smtp.login(username, password)
                 smtp.send_message(msg)

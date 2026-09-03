@@ -90,45 +90,43 @@ Gestionale professionale per la pianificazione gastronomica, stesura contrattual
 
 ---
 
-## Guida all'Installazione & Avvio
+## Guida all'Installazione & Avvio Rapido (Zero-Setup)
 
-### Versione Windows (.exe & Script Batch)
-
-Su ambiente **Windows** sono disponibili tre modalità di utilizzo:
-
-#### 1. Download Eseguibile Standalone (.exe)
-- Scarica il file **`TenutaTurritaQuoteManager-Windows.zip`** dalla sezione **Actions / Releases** di GitHub.
-- Estrai il file zip ed esegui direttamente **`TenutaTurritaQuoteManager.exe`** con un doppio clic.
-- L'applicazione desktop creerà automaticamente il database e aprirà il browser web senza bisogno di installare Python.
-
-#### 2. Avvio Rapido con Script Batch (`avvia_windows.bat`)
-- Se hai clonato la repository su Windows, fai doppio clic su **`avvia_windows.bat`**.
-- Lo script crea automaticamente l'ambiente `.venv`, installa le dipendenze al primo avvio e lancia il gestionale nel browser.
-
-#### 3. Compilazione Locale del File .exe (`compila_exe_windows.bat`)
-- Per ricompilare il file `.exe` su Windows in locale:
-  ```cmd
-  compila_exe_windows.bat
-  ```
-  Oppure da riga di comando:
-  ```cmd
-  python build_windows.py
-  ```
-  Il file eseguibile finale sarà generato all'interno della cartella `dist\TenutaTurritaQuoteManager.exe`.
+L'applicazione è dotata di script intelligenti di auto-provisioning per **Windows (10 e 11)**, **macOS** e **Linux**: se Python non è presente sul computer, lo script lo scarica, lo installa silenziosamente, configura l'ambiente virtuale con tutte le dipendenze e avvia il gestionale aprendo il browser in automatico.
 
 ---
 
-### Avvio su macOS (Doppio Clic)
+### 🪟 Windows 10 & 11 (Doppio Clic Automatico)
 
-Su macOS è disponibile lo script di lancio diretto:
+1. Scarica o clona la cartella del progetto.
+2. Fai doppio clic su **`avvia_windows.bat`**.
+3. **Al primo avvio**: se Python non è presente nel sistema, lo script PowerShell integrato (`scripts/setup_windows.ps1`) scarica e installa automaticamente Python da `python.org`, configura l'ambiente `.venv`, installa le librerie e apre il browser su `http://127.0.0.1:8000`.
+4. **Agli avvii successivi**: l'avvio è istantaneo in meno di 2 secondi.
+
+> **Eseguibile Standalone `.exe`**: Se preferisci non avere cartelle di codice sorgente, puoi scaricare l'eseguibile pronto all'uso `TenutaTurritaQuoteManager-Windows.zip` dalla sezione **Actions / Releases** di GitHub.
+
+---
+
+### 🍏 macOS (Doppio Clic Automatico)
 
 1. Aprire la cartella di progetto nel **Finder**.
 2. Fare doppio clic su **`avvia_mac.command`**.
-3. Il server si avvierà in automatico e aprirà la pagina iniziale nel browser all'indirizzo **`http://127.0.0.1:8000`**.
+3. Se Python non è presente, lo script predispone il download ufficiale. Crea automaticamente l'ambiente `.venv`, installa le dipendenze e avvia il browser.
 
 ---
 
-### Avvio Standard da Terminale (macOS / Linux / Windows)
+### 🐧 Linux (Ubuntu, Debian, Fedora, Arch)
+
+1. Aprire il terminale nella cartella del progetto.
+2. Eseguire lo script:
+   ```bash
+   ./avvia_linux.sh
+   ```
+3. Lo script rileva la distribuzione Linux, assicura la presenza di `python3` e `python3-venv`, crea `.venv` e avvia il browser predefinito.
+
+---
+
+### 💻 Avvio Manuale da Terminale (Tutti i Sistemi Operativi)
 
 ```bash
 git clone https://github.com/melillopietro/tenuta-turrita-quote-manager.git
@@ -139,7 +137,7 @@ pip install -r requirements.txt
 ./run_local.py               # Oppure: python desktop_app.py
 ```
 
-- **Dashboard Gestionale**: `http://127.0.0.1:8000`
+- **Dashboard Gestionale**: `http://127.0.0.1:8000` (con ricerca automatica porta libera 8001, 8002...)
 - **Documentazione Interattiva API (Swagger UI)**: `http://127.0.0.1:8000/docs`
 - **Documentazione Alternativa (ReDoc)**: `http://127.0.0.1:8000/redoc`
 
@@ -254,14 +252,17 @@ tenuta-turrita-quote-manager/
 ├── data/                        # Directory locale non tracciata per database e archivi
 │   ├── pdfs/                    # File PDF generati
 │   └── backups/                 # Archivi compressi di backup
+├── scripts/
+│   └── setup_windows.ps1        # Auto-provisioning Python e dipendenze Windows 10/11
 ├── tests/
 │   └── test_app.py              # Suite di test automatizzati pytest
 ├── desktop_app.py               # Entrypoint applicazione desktop (PyInstaller)
 ├── build_windows.py             # Script Python di compilazione .exe
-├── avvia_windows.bat            # Launcher rapido per Windows (con auto-setup)
+├── avvia_windows.bat            # Launcher rapido per Windows 10/11 (con auto-setup)
 ├── compila_exe_windows.bat      # Script batch per compilare l'eseguibile su Windows
 ├── avvia_mac.command            # Launcher con doppio clic per macOS Finder
-├── run_local.py                 # Script di avvio con auto-rilevamento venv
+├── avvia_linux.sh               # Launcher con auto-rilevamento per distribuzioni Linux
+├── run_local.py                 # Script di avvio con auto-rilevamento venv e porte
 ├── requirements.txt             # Dipendenze Python
 ├── .gitignore                   # Regole di esclusione dati sensibili
 └── README.md                    # Documentazione tecnica istituzionale

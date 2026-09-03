@@ -28,6 +28,9 @@ from app.services.quote_service import (
 )
 
 
+import html
+
+
 def eur(value: float | int | None) -> str:
     value = float(value or 0)
     return f"€ {value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
@@ -38,8 +41,11 @@ def safe(value: Any, fallback: str = "-") -> str:
     return text if text.strip() else fallback
 
 
-def paragraph(text: str, style: ParagraphStyle) -> Paragraph:
-    return Paragraph(safe(text, "").replace("\n", "<br/>"), style)
+def paragraph(text: str, style: ParagraphStyle, is_html: bool = False) -> Paragraph:
+    val = safe(text, "")
+    if not is_html:
+        val = html.escape(val, quote=False)
+    return Paragraph(val.replace("\n", "<br/>"), style)
 
 
 class NumberedCanvas(canvas.Canvas):
@@ -207,20 +213,23 @@ def build_pdf(quote_id: int) -> Path:
             course = item["custom_course_name"] if item["course_type"] == "Custom" and item["custom_course_name"] else item["course_type"]
             menu_group = item["menu_group"] if "menu_group" in item.keys() else "adult"
             group_label = "Menù Adulti" if menu_group != "children" else "Menù Bambini"
-            course_cell = f"<b>{group_label}</b><br/>{course}"
+            course_cell = f"<b>{html.escape(group_label)}</b><br/>{html.escape(str(course))}"
 
-            detail_parts = [safe(item["description"], "")]
+            detail_parts = []
+            if item["description"]:
+                detail_parts.append(html.escape(str(item["description"])))
             if item["allergens"]:
-                detail_parts.append(f"<font color='#6F8062'><b>Allergeni:</b> {item['allergens']}</font>")
+                detail_parts.append(f"<font color='#6F8062'><b>Allergeni:</b> {html.escape(str(item['allergens']))}</font>")
             if item["notes"]:
-                detail_parts.append(f"<i>Note: {item['notes']}</i>")
+                detail_parts.append(f"<i>Note: {html.escape(str(item['notes']))}</i>")
             detail_text = "<br/>".join(part for part in detail_parts if part)
 
-            dish_text = f"<b>{item['dish_name']}</b>"
+            dish_clean = html.escape(str(item["dish_name"]))
+            dish_text = f"<b>{dish_clean}</b>"
             if item.get("is_extra") and float(item.get("extra_price", 0)) > 0:
                 dish_text += f"<br/><font color='#6F8062'>+ {eur(item['extra_price'])} a persona</font>"
 
-            menu_rows.append([paragraph(course_cell, badge_style), paragraph(dish_text, body), paragraph(detail_text or "-", body)])
+            menu_rows.append([paragraph(course_cell, badge_style, is_html=True), paragraph(dish_text, body, is_html=True), paragraph(detail_text or "-", body, is_html=True)])
 
         menu_table = Table(menu_rows, colWidths=[4.2 * cm, 5.6 * cm, 8.0 * cm])
         menu_table.setStyle(

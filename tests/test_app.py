@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from starlette.testclient import TestClient
 
-from app.db import DB_PATH, init_db, query_all, query_one
+from app.db import DB_PATH, get_connection, init_db, query_all, query_one
 from app.main import app
 from app.services.backup_service import create_backup_with_optional_drive
 from app.services.pdf_service import build_pdf
@@ -213,3 +213,78 @@ def test_fastapi_endpoints():
     res = client.get(f"/quotes/{quote_id}/pdf")
     assert res.status_code == 200
     assert res.headers["content-type"] == "application/pdf"
+
+
+def test_pdf_generation_with_xml_special_characters():
+    quote_data = {
+        "customer_first_name": "Mario & Luigi",
+        "customer_last_name": "Rossi <Spouses>",
+        "event_type": "Matrimonio",
+        "event_date": "2026-10-15",
+        "guests_adults": 80,
+        "guests_children": 5,
+        "price_per_adult": 120.0,
+        "price_per_child": 40.0,
+        "notes": "Taglio torta & brindisi con flute <oro & cristallo>.",
+        "menu_group": ["adult"],
+        "course_type": ["Primo"],
+        "custom_course_name": [""],
+        "dish_name": ["Spaghetti Mare & Monti <Specialità>"],
+        "description": ["Con vongole & porcini freschi <km 0>"],
+        "allergens": ["Glutine & Crostacei"],
+        "item_notes": ["Servire caldo & fumante"],
+        "extra_price": ["0"],
+    }
+    quote_id = create_quote(quote_data)
+    pdf_path = build_pdf(quote_id)
+    assert pdf_path.exists()
+    assert pdf_path.stat().st_size > 1000
+
+
+def test_database_wal_and_indexes():
+    with get_connection() as conn:
+        journal_mode = conn.execute("PRAGMA journal_mode").fetchone()[0]
+        assert journal_mode.lower() == "wal"
+
+        indexes = [r["name"] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='index'").fetchall()]
+        assert "idx_quotes_customer_id" in indexes
+        assert "idx_quotes_status" in indexes
+        assert "idx_quotes_event_date" in indexes
+        assert "idx_quote_menu_items_quote_id" in indexes
+
+
+def test_404_error_handling():
+    client = TestClient(app)
+
+    res = client.get("/quotes/999999")
+    assert res.status_code == 404
+    assert "Preventivo non trovato" in res.text
+
+    res = client.get("/quotes/999999/pdf")
+    assert res.status_code == 404
+    assert "Preventivo non trovato" in res.text
+
+    res = client.get("/quotes/999999/print")
+    assert res.status_code == 404
+    assert "Preventivo non trovato" in res.text
+
+    res = client.get("/backup/download/999999")
+    assert res.status_code == 404
+    assert "Archivio di backup non trovato" in res.text
+
+
+def test_negative_input_sanitization():
+    res = calculate_quote_breakdown(
+        guests_adults=-10,
+        guests_children=-5,
+        price_per_adult=-100.0,
+        price_per_child=-50.0,
+        extra_amount=-200.0,
+        discount_amount=-50.0,
+        vat_rate=-10.0,
+    )
+    assert res["adults_subtotal"] == 0.0
+    assert res["children_subtotal"] == 0.0
+    assert res["net_taxable"] == 0.0
+    assert res["total_amount"] == 0.0
+

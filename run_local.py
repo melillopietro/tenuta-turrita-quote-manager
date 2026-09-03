@@ -30,15 +30,31 @@ if not IN_VENV:
     # Riavvia il processo con l'interprete del virtualenv
     os.execv(str(VENV_PYTHON), [str(VENV_PYTHON), *sys.argv])
 
+import socket
 import uvicorn
 
 HOST = "127.0.0.1"
-PORT = 8001
+
+
+def find_available_port(host: str = "127.0.0.1", start_port: int = 8000) -> int:
+    port = start_port
+    while port < start_port + 50:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                s.bind((host, port))
+                return port
+            except OSError:
+                port += 1
+    return start_port
+
+
+PORT = find_available_port(HOST, 8000)
 URL = f"http://{HOST}:{PORT}"
 
 
 def open_browser() -> None:
-    time.sleep(1.5)
+    time.sleep(1.2)
     webbrowser.open(URL)
 
 

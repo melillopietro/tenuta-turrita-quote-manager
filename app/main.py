@@ -52,6 +52,21 @@ def redirect(path: str) -> RedirectResponse:
     return RedirectResponse(path, status_code=303)
 
 
+def render_template(
+    request: Request,
+    name: str,
+    context: dict[str, Any] | None = None,
+    status_code: int = 200,
+) -> HTMLResponse:
+    ctx: dict[str, Any] = {"request": request}
+    if context:
+        ctx.update(context)
+    try:
+        return templates.TemplateResponse(request=request, name=name, context=ctx, status_code=status_code)
+    except TypeError:
+        return templates.TemplateResponse(name, ctx, status_code=status_code)
+
+
 async def form_to_dict(request: Request) -> dict[str, Any]:
     form = await request.form()
     data: dict[str, Any] = {}
@@ -76,7 +91,7 @@ def get_preset_api(preset_key: str) -> dict[str, Any]:
 def dashboard(request: Request) -> HTMLResponse:
     stats = dashboard_stats()
     recent = list_quotes()[:6]
-    return templates.TemplateResponse("dashboard.html", {"request": request, "stats": stats, "recent": recent})
+    return render_template(request, "dashboard.html", {"stats": stats, "recent": recent})
 
 
 @app.get("/quotes", response_class=HTMLResponse)
@@ -96,10 +111,10 @@ def quotes(
     years_rows = query_all("SELECT DISTINCT year FROM quotes ORDER BY year DESC")
     available_years = [r["year"] for r in years_rows]
 
-    return templates.TemplateResponse(
+    return render_template(
+        request,
         "quotes.html",
         {
-            "request": request,
             "quotes": quotes_list,
             "statuses": STATUSES,
             "event_types": EVENT_TYPES,
@@ -119,10 +134,10 @@ def quotes(
 def new_quote(request: Request) -> HTMLResponse:
     staff = query_all("SELECT * FROM staff WHERE active = 1 ORDER BY name")
     settings = settings_dict()
-    return templates.TemplateResponse(
+    return render_template(
+        request,
         "quote_form.html",
         {
-            "request": request,
             "event_types": EVENT_TYPES,
             "course_types": COURSE_TYPES,
             "menu_presets": MENU_PRESETS,
@@ -143,7 +158,7 @@ async def create_quote_route(request: Request) -> RedirectResponse:
 def quote_detail(request: Request, quote_id: int, msg: str | None = None) -> HTMLResponse:
     quote = get_quote(quote_id)
     if quote is None:
-        return templates.TemplateResponse("error.html", {"request": request, "message": "Preventivo non trovato"}, status_code=404)
+        return render_template(request, "error.html", {"message": "Preventivo non trovato"}, status_code=404)
     items = get_quote_items(quote_id)
     contract = get_quote_contract(quote_id)
     email_logs = query_all("SELECT * FROM email_logs WHERE quote_id = ? ORDER BY sent_at DESC", (quote_id,))
@@ -157,10 +172,10 @@ def quote_detail(request: Request, quote_id: int, msg: str | None = None) -> HTM
         discount_amount=quote["discount_amount"],
         vat_rate=quote["vat_rate"],
     )
-    return templates.TemplateResponse(
+    return render_template(
+        request,
         "quote_detail.html",
         {
-            "request": request,
             "quote": quote,
             "items": items,
             "contract": contract,
@@ -177,15 +192,15 @@ def quote_detail(request: Request, quote_id: int, msg: str | None = None) -> HTM
 def edit_quote_form(request: Request, quote_id: int) -> HTMLResponse:
     quote = get_quote(quote_id)
     if quote is None:
-        return templates.TemplateResponse("error.html", {"request": request, "message": "Preventivo non trovato"}, status_code=404)
+        return render_template(request, "error.html", {"message": "Preventivo non trovato"}, status_code=404)
 
     staff = query_all("SELECT * FROM staff WHERE active = 1 ORDER BY name")
     items = get_quote_items(quote_id)
 
-    return templates.TemplateResponse(
+    return render_template(
+        request,
         "quote_edit.html",
         {
-            "request": request,
             "quote": quote,
             "items": items,
             "event_types": EVENT_TYPES,
@@ -223,8 +238,13 @@ async def quote_status(quote_id: int, status: str = Form(...)) -> RedirectRespon
 
 
 @app.get("/quotes/{quote_id}/pdf")
-def quote_pdf(quote_id: int) -> FileResponse:
+def quote_pdf(request: Request, quote_id: int):
+    quote = get_quote(quote_id)
+    if quote is None:
+        return render_template(request, "error.html", {"message": "Preventivo non trovato"}, status_code=404)
     pdf_path = build_pdf(quote_id)
+    if not pdf_path.exists():
+        return render_template(request, "error.html", {"message": "Impossibile generare il file PDF"}, status_code=500)
     return FileResponse(str(pdf_path), media_type="application/pdf", filename=pdf_path.name)
 
 
@@ -232,7 +252,7 @@ def quote_pdf(quote_id: int) -> FileResponse:
 def quote_print(request: Request, quote_id: int) -> HTMLResponse:
     quote = get_quote(quote_id)
     if quote is None:
-        return templates.TemplateResponse("error.html", {"request": request, "message": "Preventivo non trovato"}, status_code=404)
+        return render_template(request, "error.html", {"message": "Preventivo non trovato"}, status_code=404)
     breakdown = calculate_quote_breakdown(
         guests_adults=quote["guests_adults"],
         guests_children=quote["guests_children"],
@@ -242,10 +262,10 @@ def quote_print(request: Request, quote_id: int) -> HTMLResponse:
         discount_amount=quote["discount_amount"],
         vat_rate=quote["vat_rate"],
     )
-    return templates.TemplateResponse(
+    return render_template(
+        request,
         "quote_print.html",
         {
-            "request": request,
             "quote": quote,
             "items": get_quote_items(quote_id),
             "contract": get_quote_contract(quote_id),
@@ -259,7 +279,7 @@ def quote_print(request: Request, quote_id: int) -> HTMLResponse:
 def contract_form(request: Request, quote_id: int) -> HTMLResponse:
     quote = get_quote(quote_id)
     if quote is None:
-        return templates.TemplateResponse("error.html", {"request": request, "message": "Preventivo non trovato"}, status_code=404)
+        return render_template(request, "error.html", {"message": "Preventivo non trovato"}, status_code=404)
     contract = get_quote_contract(quote_id)
     settings = settings_dict()
     template_text = contract["contract_text"] if contract else default_contract_template(
@@ -276,10 +296,10 @@ def contract_form(request: Request, quote_id: int) -> HTMLResponse:
             "cancellation_deadline": "[DATA_LIMITE_ANNULLAMENTO]",
         }
     )
-    return templates.TemplateResponse(
+    return render_template(
+        request,
         "contract_form.html",
         {
-            "request": request,
             "quote": quote,
             "contract": contract,
             "settings": settings,
@@ -299,7 +319,7 @@ async def save_contract(request: Request, quote_id: int) -> RedirectResponse:
 def send_form(request: Request, quote_id: int) -> HTMLResponse:
     quote = get_quote(quote_id)
     if quote is None:
-        return templates.TemplateResponse("error.html", {"request": request, "message": "Preventivo non trovato"}, status_code=404)
+        return render_template(request, "error.html", {"message": "Preventivo non trovato"}, status_code=404)
     settings = settings_dict()
     event_name = quote["custom_event_type"] if quote["event_type"] == "Generico" and quote["custom_event_type"] else quote["event_type"]
     message = f"""Gentile {quote['first_name']} {quote['last_name']},
@@ -311,9 +331,10 @@ Restiamo a disposizione per qualsiasi chiarimento o richiesta di personalizzazio
 Cordiali saluti,
 {settings.get('smtp_sender_name') or settings.get('company_name') or 'Tenuta Turrita'}
 """
-    return templates.TemplateResponse(
+    return render_template(
+        request,
         "send_form.html",
-        {"request": request, "quote": quote, "settings": settings, "message": message},
+        {"quote": quote, "settings": settings, "message": message},
     )
 
 
@@ -325,9 +346,10 @@ async def send_quote(request: Request, quote_id: int):
         return redirect(f"/quotes/{quote_id}?msg=email_sent")
     except Exception as exc:
         quote = get_quote(quote_id)
-        return templates.TemplateResponse(
+        return render_template(
+            request,
             "send_form.html",
-            {"request": request, "quote": quote, "settings": settings_dict(), "message": data.get("message", ""), "error": str(exc)},
+            {"quote": quote, "settings": settings_dict(), "message": data.get("message", ""), "error": str(exc)},
             status_code=400,
         )
 
@@ -335,7 +357,7 @@ async def send_quote(request: Request, quote_id: int):
 @app.get("/settings", response_class=HTMLResponse)
 def settings_page(request: Request, msg: str | None = None) -> HTMLResponse:
     staff = query_all("SELECT * FROM staff ORDER BY active DESC, name")
-    return templates.TemplateResponse("settings.html", {"request": request, "settings": settings_dict(), "staff": staff, "msg": msg})
+    return render_template(request, "settings.html", {"settings": settings_dict(), "staff": staff, "msg": msg})
 
 
 @app.post("/settings")
@@ -369,7 +391,7 @@ async def add_staff(request: Request) -> RedirectResponse:
 @app.get("/backup", response_class=HTMLResponse)
 def backup_page(request: Request, msg: str | None = None) -> HTMLResponse:
     jobs = query_all("SELECT * FROM backup_jobs ORDER BY created_at DESC LIMIT 20")
-    return templates.TemplateResponse("backup.html", {"request": request, "jobs": jobs, "settings": settings_dict(), "msg": msg})
+    return render_template(request, "backup.html", {"jobs": jobs, "settings": settings_dict(), "msg": msg})
 
 
 @app.post("/backup")
@@ -379,9 +401,11 @@ def create_backup() -> RedirectResponse:
 
 
 @app.get("/backup/download/{job_id}")
-def download_backup(job_id: int) -> FileResponse:
+def download_backup(request: Request, job_id: int):
     job = query_one("SELECT * FROM backup_jobs WHERE id = ?", (job_id,))
     if job is None:
-        raise ValueError("Backup non trovato")
+        return render_template(request, "error.html", {"message": "Archivio di backup non trovato"}, status_code=404)
     path = Path(job["file_path"])
+    if not path.exists():
+        return render_template(request, "error.html", {"message": "Il file di backup non è presente sul disco"}, status_code=404)
     return FileResponse(str(path), media_type="application/zip", filename=path.name)

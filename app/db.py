@@ -8,9 +8,12 @@ from app.paths import BACKUP_DIR, BASE_DIR, DATA_DIR, DB_PATH, PDF_DIR
 
 
 def get_connection() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30.0)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA journal_mode = WAL")
+    conn.execute("PRAGMA busy_timeout = 30000")
+    conn.execute("PRAGMA synchronous = NORMAL")
     return conn
 
 
@@ -158,6 +161,15 @@ def init_db() -> None:
         error_message TEXT,
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE INDEX IF NOT EXISTS idx_quotes_customer_id ON quotes(customer_id);
+    CREATE INDEX IF NOT EXISTS idx_quotes_status ON quotes(status);
+    CREATE INDEX IF NOT EXISTS idx_quotes_event_date ON quotes(event_date);
+    CREATE INDEX IF NOT EXISTS idx_quotes_created_at ON quotes(created_at);
+    CREATE INDEX IF NOT EXISTS idx_quote_menu_items_quote_id ON quote_menu_items(quote_id);
+    CREATE INDEX IF NOT EXISTS idx_quote_contracts_quote_id ON quote_contracts(quote_id);
+    CREATE INDEX IF NOT EXISTS idx_quote_pdfs_quote_id ON quote_pdfs(quote_id);
+    CREATE INDEX IF NOT EXISTS idx_email_logs_quote_id ON email_logs(quote_id);
     """
     with get_connection() as conn:
         conn.executescript(schema)
