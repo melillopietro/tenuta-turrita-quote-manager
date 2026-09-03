@@ -7,7 +7,11 @@ from starlette.testclient import TestClient
 
 from app.db import DB_PATH, get_connection, init_db, query_all, query_one
 from app.main import app
-from app.services.backup_service import create_backup_with_optional_drive
+from app.services.backup_service import (
+    create_backup_with_optional_drive,
+    create_local_backup,
+    restore_from_backup_zip,
+)
 from app.services.pdf_service import build_pdf
 from app.services.quote_service import (
     MENU_PRESETS,
@@ -287,4 +291,54 @@ def test_negative_input_sanitization():
     assert res["children_subtotal"] == 0.0
     assert res["net_taxable"] == 0.0
     assert res["total_amount"] == 0.0
+
+
+def test_backup_restore_functionality():
+    # 1. Create a backup
+    backup_zip = create_local_backup()
+    assert backup_zip.exists()
+
+    # 2. Add temporary quote to modify current DB
+    temp_id = create_quote({
+        "customer_first_name": "TestRestore",
+        "customer_last_name": "Temporary",
+        "event_type": "Compleanno",
+        "guests_adults": 25,
+        "price_per_adult": 80.0,
+    })
+    assert get_quote(temp_id) is not None
+
+    # 3. Restore previous backup
+    res = restore_from_backup_zip(backup_zip)
+    assert res["restored"] is True
+
+    # 4. Verify temporary quote is no longer present, DB restored accurately
+    assert get_quote(temp_id) is None
+
+    # 5. Check restore log entry
+    restore_job = query_one("SELECT * FROM backup_jobs WHERE backup_type = 'restore' ORDER BY id DESC LIMIT 1")
+    assert restore_job is not None
+    assert restore_job["status"] == "restored"
+
+
+def test_backup_restore_endpoints():
+    client = TestClient(app)
+
+    # 1. Test backup view shows restore panels
+    res = client.get("/backup")
+    assert res.status_code == 200
+    assert "Ripristina Archivio da File" in res.text
+
+    # 2. Test create backup via POST
+    post_res = client.post("/backup", follow_redirects=False)
+    assert post_res.status_code == 303
+    assert "msg=backup_created" in post_res.headers["location"]
+
+    # 3. Test restore from job id
+    latest_job = query_one("SELECT id FROM backup_jobs WHERE backup_type = 'local' ORDER BY id DESC LIMIT 1")
+    if latest_job:
+        restore_res = client.post(f"/backup/restore/{latest_job['id']}", follow_redirects=False)
+        assert restore_res.status_code == 303
+        assert "msg=backup_restored" in restore_res.headers["location"]
+
 

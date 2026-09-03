@@ -178,10 +178,15 @@ Scomposizione automatica conforme agli standard contabili:
   2. HTML responsive con impaginazione grafica Tenuta Turrita, tabella riassuntiva e firma istituzionale.
 - Allegato PDF compilato al momento dell'invio.
 
-### Backup Transazionale & Disaster Recovery
-- Utilizzo dell'API nativa `sqlite3.Connection.backup()`, che copia il database senza rischio di lock o corruzione dati.
-- Creazione di archivio ZIP compresso contenente database e tutti i file PDF.
-- Integrazione con Google Drive via OAuth2 (posizionando le credenziali in `app/secrets/google_credentials.json`).
+### Backup Transazionale, Ripristino & Migrazione Automatica
+- **Backup Online Atomico**: Utilizzo dell'API nativa `sqlite3.Connection.backup()`, che copia il database senza rischio di lock o corruzione dati.
+- **Archivio All-in-One**: Generazione di file `.zip` compressi contenenti l'intero database e tutti i documenti PDF dei preventivi.
+- **Ripristino Sicuro (Disaster Recovery)**:
+  - Caricamento diretto di archivi `.zip` dall'interfaccia o ripristino con 1 clic dallo storico.
+  - Verifica automatica dell'integrità del database prima della sovrascrittura.
+  - Generazione preventiva di una copia di sicurezza automatica pre-ripristino per azzerare qualsiasi rischio di perdita dati.
+  - **Auto-Migrazione dello Schema**: Al ripristino di un backup proveniente da versioni precedenti, il sistema esegue in automatico le migrazioni DDL, garantendo piena compatibilità con qualsiasi nuova funzionalità aggiunta al gestionale.
+- **Sincronizzazione Google Drive**: Supporto per l'upload automatico sul cloud via OAuth2 (posizionando le credenziali in `app/secrets/google_credentials.json`).
 
 ---
 
@@ -194,6 +199,12 @@ Il progetto include una suite di collaudo automatizzata con **`pytest`** che ver
 - Generazione conforme e validazione header PDF (`test_pdf_generation`).
 - Backup locale transazionale SQLite (`test_backup_service`).
 - Endpoint web e rendering template (`test_fastapi_endpoints`).
+- Generazione PDF protetta da entità XML (`test_pdf_generation_with_xml_special_characters`).
+- Modalità WAL del database e integrità indici (`test_database_wal_and_indexes`).
+- Gestione codici di stato 404 per risorse mancanti (`test_404_error_handling`).
+- Sanitizzazione parametri numerici negativi (`test_negative_input_sanitization`).
+- Funzionalità di backup e ripristino sicuro (`test_backup_restore_functionality`).
+- Endpoint web di upload e ripristino archivio (`test_backup_restore_endpoints`).
 
 ### Esecuzione della Suite
 
@@ -203,14 +214,7 @@ PYTHONPATH=. .venv/bin/pytest tests/ -v
 
 Risultato atteso:
 ```text
-tests/test_app.py::test_calculate_quote_breakdown PASSED                 [ 16%]
-tests/test_app.py::test_quote_crud_and_duplication PASSED                [ 33%]
-tests/test_app.py::test_list_quotes_filters PASSED                       [ 50%]
-tests/test_app.py::test_pdf_generation PASSED                            [ 66%]
-tests/test_app.py::test_backup_service PASSED                            [ 83%]
-tests/test_app.py::test_fastapi_endpoints PASSED                         [100%]
-
-======================== 6 passed in 0.30s ========================
+======================= 12 passed in 0.40s ========================
 ```
 
 ---

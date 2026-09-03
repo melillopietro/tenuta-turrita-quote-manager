@@ -48,12 +48,25 @@
           <span>Collaboratore inserito nell'organico.</span>
         {% elif active_msg == 'backup_created' %}
           <span>Archivio di sicurezza generato con successo.</span>
+        {% elif active_msg == 'backup_restored' %}
+          <span>Archivio ripristinato con successo. Database, preventivi e documenti sincronizzati.</span>
         {% else %}
           <span>Operazione completata con successo.</span>
         {% endif %}
       </div>
       <button type="button" class="toast-close" onclick="document.getElementById('toastNotification').remove()">&times;</button>
     </div>
+    {% endif %}
+
+    {% set active_error = error or request.query_params.get('error') %}
+    {% if active_error %}
+    <div class="toast-notification" id="toastErrorNotification" style="background-color: #8C3A3A; border-color: #702828;">
+      <div class="toast-content">
+        <span>{{ active_error }}</span>
+      </div>
+      <button type="button" class="toast-close" onclick="document.getElementById('toastErrorNotification').remove()">&times;</button>
+    </div>
+    {% endif %}
     <script>
       setTimeout(() => {
         const t = document.getElementById('toastNotification');
@@ -63,7 +76,6 @@
         }
       }, 4500);
     </script>
-    {% endif %}
 
     {% block content %}{% endblock %}
   </main>

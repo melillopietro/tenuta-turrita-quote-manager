@@ -1,15 +1,15 @@
-from __future__ import annotations
-
+import urllib.parse
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, Form, Request
+from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app.db import BACKUP_DIR, init_db, query_all, query_one, set_setting, settings_dict
-from app.services.backup_service import create_backup_with_optional_drive
+from app.services.backup_service import create_backup_with_optional_drive, restore_from_backup_zip
 from app.services.email_service import send_quote_email
 from app.services.pdf_service import build_pdf, eur
 from app.services.quote_service import (
@@ -389,15 +389,46 @@ async def add_staff(request: Request) -> RedirectResponse:
 
 
 @app.get("/backup", response_class=HTMLResponse)
-def backup_page(request: Request, msg: str | None = None) -> HTMLResponse:
-    jobs = query_all("SELECT * FROM backup_jobs ORDER BY created_at DESC LIMIT 20")
-    return render_template(request, "backup.html", {"jobs": jobs, "settings": settings_dict(), "msg": msg})
+def backup_page(request: Request, msg: str | None = None, error: str | None = None) -> HTMLResponse:
+    jobs = query_all("SELECT * FROM backup_jobs ORDER BY created_at DESC LIMIT 30")
+    return render_template(request, "backup.html", {"jobs": jobs, "settings": settings_dict(), "msg": msg, "error": error})
 
 
 @app.post("/backup")
 def create_backup() -> RedirectResponse:
     create_backup_with_optional_drive()
     return redirect("/backup?msg=backup_created")
+
+
+@app.post("/backup/restore/upload")
+async def restore_backup_upload(file: UploadFile = File(...)) -> RedirectResponse:
+    if not file.filename or not file.filename.lower().endswith(".zip"):
+        return redirect("/backup?error=" + urllib.parse.quote("Seleziona un file archivio .zip valido."))
+
+    stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    upload_path = BACKUP_DIR / f"uploaded_restore_{stamp}_{file.filename}"
+    try:
+        content = await file.read()
+        upload_path.write_bytes(content)
+        restore_from_backup_zip(upload_path)
+        return redirect("/backup?msg=backup_restored")
+    except Exception as exc:
+        return redirect("/backup?error=" + urllib.parse.quote(str(exc)))
+
+
+@app.post("/backup/restore/{job_id}")
+def restore_backup_job(job_id: int) -> RedirectResponse:
+    job = query_one("SELECT * FROM backup_jobs WHERE id = ?", (job_id,))
+    if job is None:
+        return redirect("/backup?error=" + urllib.parse.quote("Backup non trovato."))
+    path = Path(job["file_path"])
+    if not path.exists():
+        return redirect("/backup?error=" + urllib.parse.quote("Il file archivio selezionato non è più presente sul disco locale."))
+    try:
+        restore_from_backup_zip(path)
+        return redirect("/backup?msg=backup_restored")
+    except Exception as exc:
+        return redirect("/backup?error=" + urllib.parse.quote(str(exc)))
 
 
 @app.get("/backup/download/{job_id}")

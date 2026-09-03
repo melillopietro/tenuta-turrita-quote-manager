@@ -112,3 +112,85 @@ def create_backup_with_optional_drive() -> tuple[Path, str | None, str | None]:
             ("google_drive", str(zip_path), "failed", error),
         )
     return zip_path, drive_id, error
+
+
+def restore_from_backup_zip(zip_path: Path | str) -> dict[str, Any]:
+    import shutil
+    from typing import Any
+
+    zip_path = Path(zip_path)
+    if not zip_path.exists():
+        raise FileNotFoundError(f"Il file di backup non esiste: {zip_path.name}")
+    if not zipfile.is_zipfile(zip_path):
+        raise ValueError("Il file specificato non è un archivio compresso ZIP valido.")
+
+    stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    temp_extract_dir = BACKUP_DIR / f"temp_restore_{stamp}"
+    temp_extract_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            namelist = zf.namelist()
+            # Cerca il database SQLite nell'archivio
+            db_entry = next(
+                (name for name in namelist if name == "restaurant_quotes.db" or name.endswith("/restaurant_quotes.db")),
+                None,
+            )
+            if not db_entry:
+                raise ValueError("L'archivio ZIP non contiene il database essenziale 'restaurant_quotes.db'.")
+
+            zf.extractall(temp_extract_dir)
+
+        extracted_db = temp_extract_dir / db_entry
+
+        # Verifica integrità strutturale SQLite del file estratto
+        with sqlite3.connect(extracted_db) as test_conn:
+            check = test_conn.execute("PRAGMA integrity_check").fetchone()
+            if not check or check[0].lower() != "ok":
+                raise ValueError(f"Controllo integrità del database fallito: {check[0] if check else 'Errore sconosciuto'}")
+
+        # Backup di sicurezza pre-ripristino dello stato corrente
+        if DB_PATH.exists():
+            safety_backup = BACKUP_DIR / f"pre_restore_safety_{stamp}.db"
+            with sqlite3.connect(DB_PATH) as cur_conn:
+                with sqlite3.connect(safety_backup) as saf_conn:
+                    cur_conn.backup(saf_conn)
+
+        # Ripristino atomico del database tramite SQLite Online Backup API
+        with sqlite3.connect(extracted_db) as src_conn:
+            with sqlite3.connect(DB_PATH) as dst_conn:
+                src_conn.backup(dst_conn)
+                dst_conn.commit()
+
+        # Ripristino dei file PDF contenuti nell'archivio
+        extracted_pdfs = temp_extract_dir / "pdfs"
+        pdf_count = 0
+        if extracted_pdfs.exists() and extracted_pdfs.is_dir():
+            PDF_DIR.mkdir(parents=True, exist_ok=True)
+            for pdf_file in extracted_pdfs.glob("*.pdf"):
+                dest_pdf = PDF_DIR / pdf_file.name
+                shutil.copy2(pdf_file, dest_pdf)
+                pdf_count += 1
+
+        # Esecuzione automatica migrazioni dello schema per garantire compatibilità con versioni software recenti
+        from app.db import init_db
+
+        init_db()
+
+        # Registrazione nei log di backup
+        execute(
+            "INSERT INTO backup_jobs(backup_type, file_path, status) VALUES (?, ?, ?)",
+            ("restore", str(zip_path), "restored"),
+        )
+
+        return {
+            "restored": True,
+            "backup_file": zip_path.name,
+            "pdf_count": pdf_count,
+            "restored_at": stamp,
+        }
+
+    finally:
+        if temp_extract_dir.exists():
+            shutil.rmtree(temp_extract_dir, ignore_errors=True)
+

@@ -10,24 +10,68 @@
   <form method="post"><button class="btn primary">Genera Nuovo Backup</button></form>
 </section>
 
-<div class="panel">
-  <div class="panel-head"><h2>Stato Sincronizzazione Cloud</h2></div>
-  <p>Backup automatico su Google Drive: <strong>{{ 'Attivo ed abilitato' if settings.drive_backup_enabled == 'true' else 'Non configurato (solo locale)' }}</strong></p>
+<div class="grid-2" style="margin-bottom: 24px;">
+  <div class="panel">
+    <div class="panel-head"><h2>Stato Sincronizzazione Cloud</h2></div>
+    <p>Backup automatico su Google Drive: <strong>{{ 'Attivo ed abilitato' if settings.drive_backup_enabled == 'true' else 'Non configurato (solo locale)' }}</strong></p>
+    <p class="muted" style="margin-top: 8px; font-size: 13px;">Puoi attivare o disattivare il backup su Google Drive dal menu <a href="/settings" style="color: var(--primary);">Impostazioni</a>.</p>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Ripristina Archivio da File (.zip)</h2></div>
+    <form method="post" action="/backup/restore/upload" enctype="multipart/form-data" onsubmit="return confirm('ATTENZIONE: Il ripristino sostituirà il database attuale con quello presente nel file ZIP.\n\nIl sistema creerà comunque un backup di sicurezza automatico dello stato corrente prima di procedere.\n\nVuoi continuare?');">
+      <p class="muted" style="margin-bottom: 12px; font-size: 13px;">Carica un file di backup <code>.zip</code> generato in precedenza da questo gestionale per ripristinare tutti i clienti, preventivi e documenti PDF.</p>
+      <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <input type="file" name="file" accept=".zip" required style="flex: 1; padding: 6px; font-size: 13px;">
+        <button class="btn primary small" type="submit">Ripristina da File</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <div class="panel">
-  <div class="panel-head"><h2>Storico Backup Generati</h2></div>
+  <div class="panel-head"><h2>Storico Backup & Punti di Ripristino</h2></div>
   <table>
-    <thead><tr><th>Data & Ora Creazione</th><th>Destinazione</th><th>Esito</th><th>ID Google Drive</th><th>Note di Errore</th><th style="text-align:right;">Download</th></tr></thead>
+    <thead>
+      <tr>
+        <th>Data & Ora Operazione</th>
+        <th>Tipologia / Destinazione</th>
+        <th>Esito</th>
+        <th>File / ID Cloud</th>
+        <th>Note</th>
+        <th style="text-align:right;">Azioni Disponibili</th>
+      </tr>
+    </thead>
     <tbody>
       {% for j in jobs %}
       <tr>
         <td><strong>{{ j.created_at }}</strong></td>
-        <td>{{ 'Cloud Google Drive' if j.backup_type == 'google_drive' else 'Archivio Locale ZIP' }}</td>
-        <td><span class="badge {{ 'accettato' if j.status in ['uploaded', 'success', 'completed'] else ('rifiutato' if j.status == 'failed' else 'in_attesa') }}">{{ j.status }}</span></td>
-        <td>{{ j.google_drive_file_id or '-' }}</td>
+        <td>
+          {% if j.backup_type == 'restore' %}
+            <span class="badge in_attesa" style="background: #E8E5DD; color: #4A4E46;">Ripristino Eseguito</span>
+          {% elif j.backup_type == 'google_drive' %}
+            Cloud Google Drive
+          {% else %}
+            Archivio Locale ZIP
+          {% endif %}
+        </td>
+        <td>
+          <span class="badge {{ 'accettato' if j.status in ['uploaded', 'success', 'completed', 'created', 'restored'] else ('rifiutato' if j.status == 'failed' else 'in_attesa') }}">
+            {{ 'Completato' if j.status in ['created', 'uploaded', 'restored'] else j.status }}
+          </span>
+        </td>
+        <td style="font-family: monospace; font-size: 12px;">{{ j.google_drive_file_id or '-' }}</td>
         <td>{{ j.error_message or '-' }}</td>
-        <td style="text-align:right;"><a class="btn small" href="/backup/download/{{ j.id }}">Scarica Archivio</a></td>
+        <td style="text-align:right; white-space: nowrap;">
+          {% if j.backup_type != 'restore' %}
+            <a class="btn small" href="/backup/download/{{ j.id }}">Scarica</a>
+            <form method="post" action="/backup/restore/{{ j.id }}" style="display:inline; margin-left: 6px;" onsubmit="return confirm('Confermi il ripristino di questo backup? Verrà creato automaticamente un punto di salvataggio dello stato attuale.');">
+              <button class="btn small primary" type="submit">Ripristina</button>
+            </form>
+          {% else %}
+            <span class="muted" style="font-size: 12px;">Punto di Ripristino</span>
+          {% endif %}
+        </td>
       </tr>
       {% else %}
       <tr><td colspan="6" class="muted">Nessun backup registrato nell'archivio.</td></tr>
