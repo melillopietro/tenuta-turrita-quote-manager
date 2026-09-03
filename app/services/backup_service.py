@@ -6,31 +6,41 @@ from datetime import datetime
 from pathlib import Path
 
 from app.db import execute, get_setting
-from app.paths import BACKUP_DIR, DATA_DIR, DB_PATH, PDF_DIR
+from app.paths import BACKUP_DIR, DATA_DIR, DB_PATH, PDF_DIR, SECRETS_DIR
 
 SCOPES = ["https://www.googleapis.com/auth/drive.file"]
 
 
 def create_local_backup() -> Path:
     stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    BACKUP_DIR.mkdir(parents=True, exist_ok=True)
     zip_path = BACKUP_DIR / f"backup_ristorante_{stamp}.zip"
 
     # Utilizza l'API nativa SQLite Online Backup per garantire integrità totale
     temp_db = BACKUP_DIR / f"restaurant_quotes_{stamp}.db"
     if DB_PATH.exists():
-        with sqlite3.connect(DB_PATH) as src_conn:
-            with sqlite3.connect(temp_db) as dst_conn:
-                src_conn.backup(dst_conn)
+        src_conn = sqlite3.connect(DB_PATH)
+        dst_conn = sqlite3.connect(temp_db)
+        try:
+            src_conn.backup(dst_conn)
+        finally:
+            dst_conn.close()
+            src_conn.close()
 
-    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+    try:
+        with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+            if temp_db.exists():
+                zf.write(temp_db, arcname="restaurant_quotes.db")
+            pdf_dir = DATA_DIR / "pdfs"
+            if pdf_dir.exists():
+                for pdf in pdf_dir.glob("*.pdf"):
+                    zf.write(pdf, arcname=f"pdfs/{pdf.name}")
+    finally:
         if temp_db.exists():
-            zf.write(temp_db, arcname="restaurant_quotes.db")
-        pdf_dir = DATA_DIR / "pdfs"
-        if pdf_dir.exists():
-            for pdf in pdf_dir.glob("*.pdf"):
-                zf.write(pdf, arcname=f"pdfs/{pdf.name}")
-    if temp_db.exists():
-        temp_db.unlink(missing_ok=True)
+            try:
+                temp_db.unlink()
+            except Exception:
+                pass
 
     execute(
         "INSERT INTO backup_jobs(backup_type, file_path, status) VALUES (?, ?, ?)",
@@ -41,7 +51,7 @@ def create_local_backup() -> Path:
 
 def upload_to_google_drive(file_path: Path) -> str | None:
     enabled = get_setting("drive_backup_enabled", "false").lower() == "true"
-    credentials_file = Path(__file__).resolve().parent.parent / "secrets" / "google_credentials.json"
+    credentials_file = SECRETS_DIR / "google_credentials.json"
     token_file = DATA_DIR / "google_token.json"
 
     if not enabled or not credentials_file.exists():
@@ -144,23 +154,34 @@ def restore_from_backup_zip(zip_path: Path | str) -> dict[str, Any]:
         extracted_db = temp_extract_dir / db_entry
 
         # Verifica integrità strutturale SQLite del file estratto
-        with sqlite3.connect(extracted_db) as test_conn:
+        test_conn = sqlite3.connect(extracted_db)
+        try:
             check = test_conn.execute("PRAGMA integrity_check").fetchone()
             if not check or check[0].lower() != "ok":
                 raise ValueError(f"Controllo integrità del database fallito: {check[0] if check else 'Errore sconosciuto'}")
+        finally:
+            test_conn.close()
 
         # Backup di sicurezza pre-ripristino dello stato corrente
         if DB_PATH.exists():
             safety_backup = BACKUP_DIR / f"pre_restore_safety_{stamp}.db"
-            with sqlite3.connect(DB_PATH) as cur_conn:
-                with sqlite3.connect(safety_backup) as saf_conn:
-                    cur_conn.backup(saf_conn)
+            cur_conn = sqlite3.connect(DB_PATH)
+            saf_conn = sqlite3.connect(safety_backup)
+            try:
+                cur_conn.backup(saf_conn)
+            finally:
+                saf_conn.close()
+                cur_conn.close()
 
         # Ripristino atomico del database tramite SQLite Online Backup API
-        with sqlite3.connect(extracted_db) as src_conn:
-            with sqlite3.connect(DB_PATH) as dst_conn:
-                src_conn.backup(dst_conn)
-                dst_conn.commit()
+        src_conn = sqlite3.connect(extracted_db)
+        dst_conn = sqlite3.connect(DB_PATH)
+        try:
+            src_conn.backup(dst_conn)
+            dst_conn.commit()
+        finally:
+            dst_conn.close()
+            src_conn.close()
 
         # Ripristino dei file PDF contenuti nell'archivio
         extracted_pdfs = temp_extract_dir / "pdfs"

@@ -101,7 +101,9 @@ def build_pdf(quote_id: int) -> Path:
     contract = dict(get_quote_contract(quote_id)) if get_quote_contract(quote_id) else {}
     settings = settings_dict()
 
-    file_name = f"Preventivo_{quote['quote_number']}_{quote['event_type']}_{quote['last_name']}.pdf".replace(" ", "_")
+    import re
+    clean_last_name = re.sub(r'[<>:"/\\|?*]', '', quote['last_name']).strip()
+    file_name = f"Preventivo_{quote['quote_number']}_{quote['event_type']}_{clean_last_name}.pdf".replace(" ", "_")
     file_path = PDF_DIR / file_name
 
     doc = SimpleDocTemplate(

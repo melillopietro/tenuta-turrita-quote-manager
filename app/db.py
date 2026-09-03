@@ -18,22 +18,31 @@ def get_connection() -> sqlite3.Connection:
 
 
 def query_one(sql: str, params: Iterable[Any] = ()) -> sqlite3.Row | None:
-    with get_connection() as conn:
+    conn = get_connection()
+    try:
         cur = conn.execute(sql, tuple(params))
         return cur.fetchone()
+    finally:
+        conn.close()
 
 
 def query_all(sql: str, params: Iterable[Any] = ()) -> list[sqlite3.Row]:
-    with get_connection() as conn:
+    conn = get_connection()
+    try:
         cur = conn.execute(sql, tuple(params))
         return cur.fetchall()
+    finally:
+        conn.close()
 
 
 def execute(sql: str, params: Iterable[Any] = ()) -> int:
-    with get_connection() as conn:
+    conn = get_connection()
+    try:
         cur = conn.execute(sql, tuple(params))
         conn.commit()
         return int(cur.lastrowid)
+    finally:
+        conn.close()
 
 
 def init_db() -> None:

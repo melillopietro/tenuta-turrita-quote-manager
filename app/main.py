@@ -67,6 +67,13 @@ def render_template(
         return templates.TemplateResponse(name, ctx, status_code=status_code)
 
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception) -> HTMLResponse:
+    import logging
+    logging.exception("Errore non gestito: %s", exc)
+    return render_template(request, "error.html", {"message": f"Si è verificato un errore inatteso: {exc}"}, status_code=500)
+
+
 async def form_to_dict(request: Request) -> dict[str, Any]:
     form = await request.form()
     data: dict[str, Any] = {}
@@ -396,8 +403,11 @@ def backup_page(request: Request, msg: str | None = None, error: str | None = No
 
 @app.post("/backup")
 def create_backup() -> RedirectResponse:
-    create_backup_with_optional_drive()
-    return redirect("/backup?msg=backup_created")
+    try:
+        create_backup_with_optional_drive()
+        return redirect("/backup?msg=backup_created")
+    except Exception as exc:
+        return redirect("/backup?error=" + urllib.parse.quote(f"Errore durante la generazione del backup: {exc}"))
 
 
 @app.post("/backup/restore/upload")
