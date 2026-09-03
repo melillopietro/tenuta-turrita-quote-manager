@@ -40,6 +40,12 @@
     <label class="check"><input type="checkbox" name="drive_backup_enabled" {% if settings.drive_backup_enabled == 'true' %}checked{% endif %}> Abilita caricamento automatico su Google Drive</label>
   </div>
 
+  <div class="panel form-section span-2">
+    <h2>Condizioni Contrattuali Predefinite (Standard di Struttura)</h2>
+    <p class="muted">Queste clausole vengono inserite automaticamente nei nuovi preventivi, nella stampa A4 e nei documenti PDF ufficiali.</p>
+    <label>Testo Clausole Standard<textarea name="default_contract_terms" rows="8" style="font-family: inherit; font-size: 13.5px; line-height: 1.6;">{{ settings.default_contract_terms }}</textarea></label>
+  </div>
+
   <div class="span-2 actions sticky-actions">
     <button class="btn primary" type="submit">Salva Configurazioni</button>
   </div>

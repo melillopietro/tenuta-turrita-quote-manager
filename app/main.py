@@ -366,7 +366,7 @@ async def save_settings(request: Request) -> RedirectResponse:
     allowed = [
         "company_name", "company_address", "company_phone", "company_email", "company_iban", "company_account_holder", "company_payoff",
         "smtp_host", "smtp_port", "smtp_secure", "smtp_username", "smtp_password", "smtp_sender_name", "smtp_sender_email",
-        "drive_backup_enabled",
+        "drive_backup_enabled", "default_contract_terms",
     ]
     for key in allowed:
         value = data.get(key, "")
